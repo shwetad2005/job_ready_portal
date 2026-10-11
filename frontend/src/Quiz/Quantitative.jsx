@@ -1,0 +1,971 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+    FiArrowLeft,
+    FiArrowRight,
+    FiCheckCircle,
+    FiClock,
+    FiFlag,
+    FiTarget,
+} from "react-icons/fi";
+
+import aptitudeQuestions from "../data/aptitudeQuestions";
+
+const TEST_DURATION_SECONDS = 30 * 60;
+
+function Quantitative() {
+
+    const navigate = useNavigate();
+
+    // Questions used in the quiz
+    const [quizQuestions, setQuizQuestions] = useState(
+        aptitudeQuestions
+    );
+
+    const [currentQuestion, setCurrentQuestion] = useState(0);
+
+    const [selectedAnswer, setSelectedAnswer] = useState("");
+
+    const [answers, setAnswers] = useState([]);
+
+    const [skippedQuestions, setSkippedQuestions] = useState([]);
+
+    const [timeLeft, setTimeLeft] =
+        useState(TEST_DURATION_SECONDS);
+
+    // Prevent test from being submitted multiple times
+    const [testFinished, setTestFinished] =
+        useState(false);
+
+
+    // =========================================
+    // LOAD QUESTIONS FROM ADMIN
+    // =========================================
+
+    useEffect(() => {
+
+        const savedQuestions =
+            JSON.parse(
+                localStorage.getItem("adminQuestions")
+            );
+
+        if (
+            savedQuestions &&
+            savedQuestions.length > 0
+        ) {
+
+            const aptitudeAdminQuestions =
+                savedQuestions.filter(
+                    (question) =>
+                        question.category === "Aptitude"
+                );
+
+            if (
+                aptitudeAdminQuestions.length > 0
+            ) {
+
+                setQuizQuestions(
+                    aptitudeAdminQuestions
+                );
+
+                setAnswers(
+                    Array(
+                        aptitudeAdminQuestions.length
+                    ).fill("")
+                );
+
+                setSkippedQuestions(
+                    Array(
+                        aptitudeAdminQuestions.length
+                    ).fill(false)
+                );
+
+                return;
+            }
+        }
+
+
+        // Fallback to default questions
+
+        setQuizQuestions(
+            aptitudeQuestions
+        );
+
+        setAnswers(
+            Array(
+                aptitudeQuestions.length
+            ).fill("")
+        );
+
+        setSkippedQuestions(
+            Array(
+                aptitudeQuestions.length
+            ).fill(false)
+        );
+
+    }, []);
+
+
+    const totalQuestions =
+        quizQuestions.length;
+
+
+    const question =
+        quizQuestions[currentQuestion];
+
+
+    const answeredCount =
+        answers.filter(Boolean).length;
+
+
+    const progress =
+        totalQuestions > 0
+            ? (
+                (currentQuestion + 1) /
+                totalQuestions
+            ) * 100
+            : 0;
+
+
+    const skippedCount =
+        skippedQuestions.filter(
+            (isSkipped, index) =>
+                isSkipped && !answers[index]
+        ).length;
+
+
+    const minutes =
+        Math.floor(timeLeft / 60)
+            .toString()
+            .padStart(2, "0");
+
+
+    const seconds =
+        (timeLeft % 60)
+            .toString()
+            .padStart(2, "0");
+
+
+    // =========================================
+    // FINISH TEST
+    // =========================================
+
+    const finishTest = (
+        finalAnswers = answers
+    ) => {
+
+        // Prevent duplicate result
+        if (testFinished) {
+            return;
+        }
+
+        setTestFinished(true);
+
+
+        // Calculate score
+        let totalScore = 0;
+
+
+        quizQuestions.forEach(
+            (questionItem, index) => {
+
+                if (
+                    finalAnswers[index] ===
+                    questionItem.answer
+                ) {
+
+                    totalScore++;
+
+                }
+
+            }
+        );
+
+
+        // =========================================
+        // GET CURRENT STUDENT
+        // =========================================
+
+        const currentUser =
+            JSON.parse(
+                localStorage.getItem("user")
+            );
+
+
+        const studentName =
+            currentUser?.fullName ||
+            "Unknown Student";
+
+
+        const studentEmail =
+            currentUser?.email ||
+            "";
+
+
+        // =========================================
+        // CALCULATE PERCENTAGE
+        // =========================================
+
+        const percentage =
+            totalQuestions > 0
+                ? Math.round(
+                    (
+                        totalScore /
+                        totalQuestions
+                    ) * 100
+                )
+                : 0;
+
+
+        // =========================================
+        // GET EXISTING RESULTS
+        // =========================================
+
+        const existingScores =
+            JSON.parse(
+                localStorage.getItem(
+                    "weeklyScores"
+                )
+            ) || [];
+
+
+        // =========================================
+        // CREATE NEW RESULT
+        // =========================================
+
+        const newResult = {
+
+            id: Date.now(),
+
+            // Student information
+            name: studentName,
+
+            fullName: studentName,
+
+            email: studentEmail,
+
+            // Test information
+            category: "Aptitude",
+
+            testName: "Aptitude Test",
+
+            score: totalScore,
+
+            total: totalQuestions,
+
+            percentage: percentage,
+
+            date:
+                new Date().toLocaleString(),
+
+        };
+
+
+        // =========================================
+        // SAVE RESULT
+        // =========================================
+
+        localStorage.setItem(
+            "weeklyScores",
+            JSON.stringify([
+                ...existingScores,
+                newResult,
+            ])
+        );
+
+
+        // =========================================
+        // GO TO RESULT PAGE
+        // =========================================
+
+        navigate(
+            "/result",
+            {
+                state: {
+
+                    score: totalScore,
+
+                    total: totalQuestions,
+
+                    percentage: percentage,
+
+                    category: "Aptitude",
+
+                    studentName: studentName,
+
+                },
+            }
+        );
+
+    };
+
+
+    // =========================================
+    // TIMER
+    // =========================================
+
+    useEffect(() => {
+
+        if (timeLeft <= 0) {
+
+            finishTest();
+
+            return;
+
+        }
+
+
+        const timerId =
+            setInterval(() => {
+
+                setTimeLeft(
+                    (remainingTime) =>
+                        remainingTime - 1
+                );
+
+            }, 1000);
+
+
+        return () =>
+            clearInterval(timerId);
+
+    }, [timeLeft]);
+
+
+    // =========================================
+    // SELECT ANSWER
+    // =========================================
+
+    const handleOptionSelect =
+        (option) => {
+
+            const updatedAnswers =
+                [...answers];
+
+            const updatedSkippedQuestions =
+                [...skippedQuestions];
+
+
+            updatedAnswers[
+                currentQuestion
+            ] = option;
+
+
+            updatedSkippedQuestions[
+                currentQuestion
+            ] = false;
+
+
+            setAnswers(
+                updatedAnswers
+            );
+
+            setSkippedQuestions(
+                updatedSkippedQuestions
+            );
+
+            setSelectedAnswer(
+                option
+            );
+
+        };
+
+
+    // =========================================
+    // JUMP TO QUESTION
+    // =========================================
+
+    const handleQuestionJump =
+        (questionIndex) => {
+
+            setCurrentQuestion(
+                questionIndex
+            );
+
+            setSelectedAnswer(
+                answers[questionIndex] || ""
+            );
+
+        };
+
+
+    // =========================================
+    // PREVIOUS
+    // =========================================
+
+    const handlePrevious = () => {
+
+        if (currentQuestion > 0) {
+
+            handleQuestionJump(
+                currentQuestion - 1
+            );
+
+        }
+
+    };
+
+
+    // =========================================
+    // SKIP
+    // =========================================
+
+    const handleSkip = () => {
+
+        const updatedAnswers =
+            [...answers];
+
+        const updatedSkippedQuestions =
+            [...skippedQuestions];
+
+
+        updatedAnswers[
+            currentQuestion
+        ] = "";
+
+
+        updatedSkippedQuestions[
+            currentQuestion
+        ] = true;
+
+
+        setAnswers(
+            updatedAnswers
+        );
+
+        setSkippedQuestions(
+            updatedSkippedQuestions
+        );
+
+
+        if (
+            currentQuestion <
+            totalQuestions - 1
+        ) {
+
+            // Directly move to next question
+            const nextQuestion =
+                currentQuestion + 1;
+
+            setCurrentQuestion(
+                nextQuestion
+            );
+
+            setSelectedAnswer(
+                updatedAnswers[nextQuestion] || ""
+            );
+
+            return;
+
+        }
+
+
+        // Last question → submit
+        setSelectedAnswer("");
+
+        finishTest(
+            updatedAnswers
+        );
+
+    };
+
+
+    // =========================================
+    // NEXT
+    // =========================================
+
+    const handleNext = () => {
+
+        if (
+            selectedAnswer === ""
+        ) {
+
+            alert(
+                "Please select an answer."
+            );
+
+            return;
+
+        }
+
+
+        if (
+            currentQuestion <
+            totalQuestions - 1
+        ) {
+
+            // Save current answer
+            const updatedAnswers =
+                [...answers];
+
+            updatedAnswers[
+                currentQuestion
+            ] = selectedAnswer;
+
+            setAnswers(
+                updatedAnswers
+            );
+
+
+            // Move to next question
+            const nextQuestion =
+                currentQuestion + 1;
+
+            setCurrentQuestion(
+                nextQuestion
+            );
+
+            setSelectedAnswer(
+                updatedAnswers[nextQuestion] || ""
+            );
+
+            return;
+
+        }
+
+
+        // Last question
+        const finalAnswers =
+            [...answers];
+
+
+        finalAnswers[
+            currentQuestion
+        ] = selectedAnswer;
+
+
+        finishTest(
+            finalAnswers
+        );
+
+    };
+
+
+    // =========================================
+    // SAFETY CHECK
+    // =========================================
+
+    if (!question) {
+
+        return (
+
+            <div className="container mt-5 text-center">
+
+                <h3>
+                    No aptitude questions available.
+                </h3>
+
+                <button
+                    className="btn btn-primary mt-3"
+                    onClick={() =>
+                        navigate(
+                            "/aptitude"
+                        )
+                    }
+                >
+                    Back to Aptitude
+                </button>
+
+            </div>
+
+        );
+
+    }
+
+
+    return (
+
+        <main className="quant-page">
+
+            <section className="quant-shell">
+
+                <div className="quant-hero">
+
+                    <div>
+
+                        <span className="quant-kicker">
+                            Aptitude practice
+                        </span>
+
+                        <h1>
+                            Quantitative Aptitude Test
+                        </h1>
+
+                        <p>
+                            Solve each question carefully
+                            and track your progress as you
+                            move through the set.
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        className="quant-scoreboard"
+                        aria-label="Test progress summary"
+                    >
+
+                        <div>
+
+                            <FiTarget
+                                aria-hidden="true"
+                            />
+
+                            <span>
+                                {currentQuestion + 1}/
+                                {totalQuestions}
+                            </span>
+
+                            <small>
+                                Current
+                            </small>
+
+                        </div>
+
+
+                        <div>
+
+                            <FiCheckCircle
+                                aria-hidden="true"
+                            />
+
+                            <span>
+                                {answeredCount}
+                            </span>
+
+                            <small>
+                                Answered
+                            </small>
+
+                        </div>
+
+
+                        <div>
+
+                            <FiFlag
+                                aria-hidden="true"
+                            />
+
+                            <span>
+                                {skippedCount}
+                            </span>
+
+                            <small>
+                                Skipped
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div className="quant-workspace">
+
+                    <aside
+                        className="quant-sidebar"
+                        aria-label="Question navigator"
+                    >
+
+                        <div className="quant-timer">
+
+                            <FiClock
+                                aria-hidden="true"
+                            />
+
+                            <div>
+
+                                <span>
+                                    {minutes}:{seconds}
+                                </span>
+
+                                <small>
+                                    Time left
+                                </small>
+
+                            </div>
+
+                        </div>
+
+
+                        <div className="quant-sidebar-title">
+
+                            <span>
+                                Questions
+                            </span>
+
+                            <small>
+                                {answeredCount}/
+                                {totalQuestions}
+                                {" "}answered
+                            </small>
+
+                        </div>
+
+
+                        <div className="quant-question-grid">
+
+                            {quizQuestions.map(
+                                (_, index) => {
+
+                                    const isCurrent =
+                                        currentQuestion ===
+                                        index;
+
+
+                                    const isAnswered =
+                                        Boolean(
+                                            answers[index]
+                                        );
+
+
+                                    const isSkipped =
+                                        skippedQuestions[
+                                            index
+                                        ] &&
+                                        !isAnswered;
+
+
+                                    return (
+
+                                        <button
+                                            key={index}
+                                            type="button"
+                                            className={[
+                                                "quant-question-nav",
+                                                isCurrent
+                                                    ? "is-current"
+                                                    : "",
+                                                isAnswered
+                                                    ? "is-answered"
+                                                    : "",
+                                                isSkipped
+                                                    ? "is-skipped"
+                                                    : "",
+                                            ].join(" ")}
+                                            onClick={() =>
+                                                handleQuestionJump(
+                                                    index
+                                                )
+                                            }
+                                            aria-label={
+                                                `Go to question ${
+                                                    index + 1
+                                                }`
+                                            }
+                                            aria-current={
+                                                isCurrent
+                                                    ? "step"
+                                                    : undefined
+                                            }
+                                        >
+
+                                            {index + 1}
+
+                                        </button>
+
+                                    );
+
+                                }
+                            )}
+
+                        </div>
+
+                    </aside>
+
+
+                    <div className="quant-card">
+
+                        <div className="quant-card-header">
+
+                            <div>
+
+                                <span className="quant-question-count">
+
+                                    Question{" "}
+                                    {currentQuestion + 1}
+                                    {" "}of{" "}
+                                    {totalQuestions}
+
+                                </span>
+
+
+                                <h2>
+                                    {question.question}
+                                </h2>
+
+                            </div>
+
+
+                            <div
+                                className="quant-progress-meter"
+                                aria-hidden="true"
+                            >
+
+                                <span
+                                    style={{
+                                        width:
+                                            `${progress}%`
+                                    }}
+                                />
+
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            className="quant-options"
+                            role="radiogroup"
+                            aria-label="Answer options"
+                        >
+
+                            {question.options.map(
+                                (option, index) => {
+
+                                    const optionId =
+                                        `quant-option-${index}`;
+
+
+                                    const isSelected =
+                                        selectedAnswer ===
+                                        option;
+
+
+                                    return (
+
+                                        <label
+                                            key={optionId}
+                                            className={
+                                                `quant-option ${
+                                                    isSelected
+                                                        ? "is-selected"
+                                                        : ""
+                                                }`
+                                            }
+                                            htmlFor={optionId}
+                                        >
+
+                                            <input
+                                                id={optionId}
+                                                type="radio"
+                                                name="answer"
+                                                value={option}
+                                                onChange={() =>
+                                                    handleOptionSelect(
+                                                        option
+                                                    )
+                                                }
+                                                checked={
+                                                    isSelected
+                                                }
+                                            />
+
+
+                                            <span className="quant-option-marker">
+
+                                                {String.fromCharCode(
+                                                    65 + index
+                                                )}
+
+                                            </span>
+
+
+                                            <span className="quant-option-text">
+
+                                                {option}
+
+                                            </span>
+
+                                        </label>
+
+                                    );
+
+                                }
+                            )}
+
+                        </div>
+
+
+                        <div className="quant-actions">
+
+                            <button
+                                className="quant-btn quant-btn-secondary"
+                                onClick={
+                                    handlePrevious
+                                }
+                                disabled={
+                                    currentQuestion === 0
+                                }
+                            >
+
+                                <FiArrowLeft
+                                    aria-hidden="true"
+                                />
+
+                                Previous
+
+                            </button>
+
+
+                            <button
+                                className="quant-btn quant-btn-skip"
+                                onClick={
+                                    handleSkip
+                                }
+                                type="button"
+                            >
+
+                                <FiFlag
+                                    aria-hidden="true"
+                                />
+
+                                Skip
+
+                            </button>
+
+
+                            <button
+                                className="quant-btn quant-btn-primary"
+                                onClick={
+                                    handleNext
+                                }
+                            >
+
+                                {currentQuestion ===
+                                totalQuestions - 1
+                                    ? "Submit Test"
+                                    : "Next Question"}
+
+
+                                {currentQuestion ===
+                                totalQuestions - 1
+                                    ? (
+                                        <FiCheckCircle
+                                            aria-hidden="true"
+                                        />
+                                    )
+                                    : (
+                                        <FiArrowRight
+                                            aria-hidden="true"
+                                        />
+                                    )}
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    );
+
+}
+
+export default Quantitative;
