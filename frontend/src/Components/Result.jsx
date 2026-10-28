@@ -14,6 +14,8 @@ function Result() {
 
     // Total Questions
     const total = location.state.total;
+    const testName = location.state.testName;
+    const category = location.state.category;
 
     // Percentage
     const percentage = ((score / total) * 100).toFixed(2);
@@ -25,6 +27,12 @@ function Result() {
             <div className="card shadow p-5 text-center">
 
                 <h1>🎉 Test Completed</h1>
+
+                {testName && (
+                    <p className="text-secondary mt-3">
+                        {testName}{category ? ` · ${category}` : ""}
+                    </p>
+                )}
 
                 <h3 className="mt-4">
                     Score : {score} / {total}

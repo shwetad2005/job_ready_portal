@@ -1,11 +1,18 @@
 import { Navigate } from "react-router-dom";
 
 function AdminProtectedRoute({ children }) {
+    let user = null;
+    try {
+        user = JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+        user = null;
+    }
 
-    const admin =
-        localStorage.getItem("admin");
+    const isAdmin =
+        Boolean(sessionStorage.getItem("authToken")) &&
+        user?.role === "ROLE_ADMIN";
 
-    if (!admin) {
+    if (!isAdmin) {
 
         return (
             <Navigate

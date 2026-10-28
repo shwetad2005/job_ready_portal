@@ -9,7 +9,8 @@ import {
     FiTarget,
 } from "react-icons/fi";
 
-import aptitudeQuestions from "../data/aptitudeQuestions";
+//import aptitudeQuestions from "../data/aptitudeQuestions";
+import api from "../api";
 
 const TEST_DURATION_SECONDS = 30 * 60;
 
@@ -18,9 +19,8 @@ function Quantitative() {
     const navigate = useNavigate();
 
     // Questions used in the quiz
-    const [quizQuestions, setQuizQuestions] = useState(
-        aptitudeQuestions
-    );
+  const [quizQuestions, setQuizQuestions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
     const [currentQuestion, setCurrentQuestion] = useState(0);
 
@@ -38,11 +38,9 @@ function Quantitative() {
         useState(false);
 
 
-    // =========================================
+    /* =========================================
     // LOAD QUESTIONS FROM ADMIN
-    // =========================================
-
-    useEffect(() => {
+        useEffect(() => {
 
         const savedQuestions =
             JSON.parse(
@@ -104,6 +102,63 @@ function Quantitative() {
         );
 
     }, []);
+     =========================================*/
+   
+  // Load Aptitude questions from Spring Boot backend
+  useEffect(() => {
+    const fetchAptitudeQuestions = async () => {
+      try {
+        const response = await api.get("/questions");
+
+        // Get only Aptitude category questions
+        const aptitudeAdminQuestions = response.data
+          .filter(
+            (q) =>
+              q.category?.toLowerCase() === "aptitude"
+          )
+          .map((q) => ({
+            id: q.id,
+            question: q.questionText,
+            options: [
+              q.optionA || "",
+              q.optionB || "",
+              q.optionC || "",
+              q.optionD || "",
+            ],
+            answer: q.correctAnswer || "",
+            category: q.category,
+            explanation: q.explanation || "",
+            marks: q.marks ?? 1,
+          }));
+
+          // for debugging
+console.log("Backend Questions:", response.data);
+console.log("Aptitude Questions:", aptitudeAdminQuestions);
+
+setQuizQuestions(aptitudeAdminQuestions);
+        setQuizQuestions(aptitudeAdminQuestions);
+        setAnswers(
+          Array(aptitudeAdminQuestions.length).fill("")
+        );
+        setSkippedQuestions(
+          Array(aptitudeAdminQuestions.length).fill(false)
+        );
+      } catch (error) {
+        console.error(
+          "Error loading Aptitude questions:",
+          error
+        );
+        alert(
+          " Failed to load the question. Please check the backend."
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAptitudeQuestions();
+  }, []);
+
 
 
     const totalQuestions =
@@ -540,7 +595,17 @@ function Quantitative() {
 
     };
 
-
+    
+    // =========================================
+    //  Loding que 
+    // =========================================
+if (isLoading) {
+  return (
+    <div className="container mt-5 text-center">
+      <h3>Loading Aptitude Questions...</h3>
+    </div>
+  );
+}
     // =========================================
     // SAFETY CHECK
     // =========================================

@@ -1,0 +1,36 @@
+
+package com.study.backend.validators;
+
+// Import the DTO class that contains password and confirmPassword fields
+import com.study.backend.dtos.UserRequestDto;
+
+// Import interfaces required for custom validation
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
+
+// This class contains the validation logic for the @PasswordMatch annotation
+public class PasswordMatchValidator
+        implements ConstraintValidator<PasswordMatch, UserRequestDto> {
+
+    // This method checks whether the password and confirm password match
+    @Override
+    public boolean isValid(UserRequestDto value,
+                           ConstraintValidatorContext context) {
+
+        // If the DTO object is null, skip this validation
+        if (value == null) {
+            return true;
+        }
+
+        // If either password field is null, skip comparison
+        // Required-field validation will be handled by @NotBlank
+        if (value.getPassword() == null
+                || value.getConfirmPassword() == null) {
+            return true;
+        }
+
+        // Return true if both passwords are the same
+        // Return false if the passwords are different
+        return value.getPassword().equals(value.getConfirmPassword());
+    }
+}

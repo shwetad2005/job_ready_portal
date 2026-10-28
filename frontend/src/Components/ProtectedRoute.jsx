@@ -5,9 +5,9 @@ import { Navigate, useLocation } from "react-router-dom";
 function ProtectedRoute({ children }) {
   const location = useLocation();
 
-  const isLoggedIn = sessionStorage.getItem("isLoggedIn");
+  const isLoggedIn = sessionStorage.getItem("authToken");
 
-  if (isLoggedIn !== "true") {
+  if (!isLoggedIn) {
     return (
       <Navigate
         to="/login"

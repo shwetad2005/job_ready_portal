@@ -12,10 +12,9 @@ import Coding from "./page/Coding";
 import Interview from "./page/Interview";
 import Progress from "./page/Progress";
 
-import Quantitative from "./Quiz/Quantitative";
+import PublishedCategoryTest from "./Quiz/PublishedCategoryTest";
 import Logical from "./Quiz/Logical";
 import Verbal from "./Quiz/Verbal";
-import CodingPractice from "./Quiz/CodingPractice";
 import InterviewPractice from "./Quiz/InterviewPractice";
 
 import Result from "./Components/Result";
@@ -31,6 +30,8 @@ import AdminUsers from "./admin/AdminUsers";
 import AdminQuestions from "./admin/AdminQuestions";
 import AdminWeeklyTest from "./admin/AdminWeeklyTest";
 import AdminResults from "./admin/AdminResults";
+import AdminSupportTickets from "./admin/AdminSupportTickets";
+import StudentResults from "./page/StudentResults";
 
 import ProtectedRoute from "./Components/ProtectedRoute";
 
@@ -99,6 +100,15 @@ function App() {
                     }
                 />
 
+                <Route
+                    path="/my-results"
+                    element={
+                        <ProtectedRoute>
+                            <StudentResults />
+                        </ProtectedRoute>
+                    }
+                />
+
 
                 {/* ================= APTITUDE PRACTICE ================= */}
 
@@ -106,7 +116,7 @@ function App() {
                     path="/quantitative"
                     element={
                         <ProtectedRoute>
-                            <Quantitative />
+                            <PublishedCategoryTest category="APTITUDE" />
                         </ProtectedRoute>
                     }
                 />
@@ -227,10 +237,19 @@ function App() {
 />
 
 <Route
+    path="/admin/tickets"
+    element={
+        <AdminProtectedRoute>
+            <AdminSupportTickets />
+        </AdminProtectedRoute>
+    }
+/>
+
+<Route
     path="/coding-practice"
     element={
         <ProtectedRoute>
-            <CodingPractice />
+            <PublishedCategoryTest category="CODING" />
         </ProtectedRoute>
     }
 />

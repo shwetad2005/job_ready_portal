@@ -1,27 +1,15 @@
-
 import { useNavigate } from "react-router-dom";
+import "./Interview.css";
 
 function Interview() {
-
-    // Navigation hook
     const navigate = useNavigate();
 
-    // Start Learning button
     const handleStartLearning = () => {
-
-        // Check whether user is already logged in
         const user = localStorage.getItem("user");
 
         if (user) {
-
-            // Already logged in
-            // Go directly to interview practice
             navigate("/interview-practice");
-
         } else {
-
-            // Not logged in
-            // First go to Login page
             navigate("/login", {
                 state: {
                     redirectTo: "/interview-practice"
@@ -31,158 +19,116 @@ function Interview() {
     };
 
     return (
-        <div className="container mt-5 mb-5">
+        <div className="interview-page">
+            <div className="interview-shell">
+                <section className="interview-hero" aria-labelledby="interview-title">
+                    <div className="interview-hero-copy">
+                        <span className="interview-eyebrow">
+                            <span className="interview-eyebrow-dot" aria-hidden="true" />
+                            Your next opportunity starts here
+                        </span>
+                        <h1 id="interview-title">Interview Preparation <span>🎤</span></h1>
+                        <p>
+                            Prepare for technical and HR interviews
+                            and improve your confidence.
+                        </p>
+                    </div>
 
-            {/* Page Heading */}
-            <div className="text-center mb-5">
+                    <div className="interview-hero-art" aria-hidden="true">
+                        <div className="interview-art-orbit interview-art-orbit-outer" />
+                        <div className="interview-art-orbit interview-art-orbit-inner" />
+                        <div className="interview-art-mic">🎤</div>
+                        <div className="interview-art-note interview-art-note-top">💬</div>
+                        <div className="interview-art-note interview-art-note-bottom">✦</div>
+                    </div>
+                </section>
 
-                <h1 className="fw-bold">
-                    Interview Preparation 🎤
-                </h1>
+                <section className="interview-intro interview-panel" aria-labelledby="interview-intro-title">
+                    <div className="interview-section-mark" aria-hidden="true">01</div>
+                    <div>
+                        <span className="interview-section-label">Build your confidence</span>
+                        <h2 id="interview-intro-title">What is Interview Preparation?</h2>
+                        <p>
+                            Interview preparation helps you understand
+                            commonly asked technical and HR interview
+                            questions.
+                        </p>
+                        <p>
+                            It also helps you improve your communication,
+                            confidence and ability to explain technical concepts.
+                        </p>
+                    </div>
+                </section>
 
-                <p className="lead mt-3">
-                    Prepare for technical and HR interviews
-                    and improve your confidence.
-                </p>
+                <section className="interview-practice" aria-labelledby="interview-practice-title">
+                    <div className="interview-section-heading">
+                        <div>
+                            <span className="interview-section-label">Practice with purpose</span>
+                            <h2 id="interview-practice-title">What Will You Practice? <span>🚀</span></h2>
+                        </div>
+                    </div>
 
-            </div>
-
-
-            {/* What is Interview Preparation? */}
-            <div className="card shadow-sm mb-4">
-
-                <div className="card-body p-4">
-
-                    <h3 className="fw-bold">
-                        What is Interview Preparation?
-                    </h3>
-
-                    <p className="mt-3">
-                        Interview preparation helps you understand
-                        commonly asked technical and HR interview
-                        questions.
-                    </p>
-
-                    <p>
-                        It also helps you improve your communication,
-                        confidence and ability to explain technical concepts.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            {/* What will you practice? */}
-            <div className="card shadow-sm mb-4">
-
-                <div className="card-body p-4">
-
-                    <h3 className="fw-bold mb-4">
-                        What Will You Practice? 🚀
-                    </h3>
-
-                    <div className="row">
-
-                        <div className="col-md-4 mb-3">
-
-                            <h5>💼 HR Questions</h5>
-
+                    <div className="interview-practice-grid">
+                        <article className="interview-practice-card interview-practice-card-hr">
+                            <div className="interview-card-icon" aria-hidden="true">💼</div>
+                            <span className="interview-card-number">01</span>
+                            <h3>HR Questions</h3>
                             <p>
                                 Practice common HR questions such as
                                 Tell me about yourself and career goals.
                             </p>
+                        </article>
 
-                        </div>
-
-
-                        <div className="col-md-4 mb-3">
-
-                            <h5>💻 Technical Questions</h5>
-
+                        <article className="interview-practice-card interview-practice-card-tech">
+                            <div className="interview-card-icon" aria-hidden="true">💻</div>
+                            <span className="interview-card-number">02</span>
+                            <h3>Technical Questions</h3>
                             <p>
                                 Prepare questions related to Java,
                                 React, programming and web development.
                             </p>
+                        </article>
 
-                        </div>
-
-
-                        <div className="col-md-4 mb-3">
-
-                            <h5>🎯 Interview Confidence</h5>
-
+                        <article className="interview-practice-card interview-practice-card-confidence">
+                            <div className="interview-card-icon" aria-hidden="true">🎯</div>
+                            <span className="interview-card-number">03</span>
+                            <h3>Interview Confidence</h3>
                             <p>
                                 Improve your ability to understand,
                                 prepare and answer interview questions.
                             </p>
-
-                        </div>
-
+                        </article>
                     </div>
+                </section>
 
-                </div>
-
-            </div>
-
-
-            {/* Why Interview Preparation is Important */}
-            <div className="card shadow-sm mb-5">
-
-                <div className="card-body p-4">
-
-                    <h3 className="fw-bold mb-4">
-                        Why is Interview Preparation Important? 🎯
-                    </h3>
-
-                    <ul>
-
-                        <li className="mb-2">
-                            Improves interview confidence
-                        </li>
-
-                        <li className="mb-2">
-                            Helps prepare common interview questions
-                        </li>
-
-                        <li className="mb-2">
-                            Improves technical communication
-                        </li>
-
-                        <li>
-                            Helps perform better in technical and HR rounds
-                        </li>
-
+                <section className="interview-benefits interview-panel" aria-labelledby="interview-benefits-title">
+                    <div className="interview-benefits-copy">
+                        <span className="interview-section-label">Why it matters</span>
+                        <h2 id="interview-benefits-title">Why is Interview Preparation Important? <span>🎯</span></h2>
+                    </div>
+                    <ul className="interview-benefit-list">
+                        <li><span aria-hidden="true">✓</span> Improves interview confidence</li>
+                        <li><span aria-hidden="true">✓</span> Helps prepare common interview questions</li>
+                        <li><span aria-hidden="true">✓</span> Improves technical communication</li>
+                        <li><span aria-hidden="true">✓</span> Helps perform better in technical and HR rounds</li>
                     </ul>
+                </section>
 
-                </div>
-
+                <section className="interview-cta" aria-labelledby="interview-cta-title">
+                    <div className="interview-cta-decoration" aria-hidden="true">✦</div>
+                    <span className="interview-section-label">Take the next step</span>
+                    <h2 id="interview-cta-title">Ready for Your Interview? <span>🚀</span></h2>
+                    <p>Login or register to start your interview preparation.</p>
+                    <button
+                        className="interview-start-button"
+                        onClick={handleStartLearning}
+                    >
+                        Start Learning 🚀
+                    </button>
+                </section>
             </div>
-
-
-            {/* Start Learning */}
-            <div className="text-center">
-
-                <h3 className="fw-bold">
-                    Ready for Your Interview? 🚀
-                </h3>
-
-                <p className="mt-2">
-                    Login or register to start your interview preparation.
-                </p>
-
-                <button
-                    className="btn btn-warning btn-lg mt-2"
-                    onClick={handleStartLearning}
-                >
-                    Start Learning 🚀
-                </button>
-
-            </div>
-
         </div>
     );
 }
 
 export default Interview;
-

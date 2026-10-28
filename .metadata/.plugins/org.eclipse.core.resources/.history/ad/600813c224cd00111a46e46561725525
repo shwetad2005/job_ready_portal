@@ -1,0 +1,5 @@
+package com.study.backend.validators;
+
+public class PasswordMatchValidator {
+
+}

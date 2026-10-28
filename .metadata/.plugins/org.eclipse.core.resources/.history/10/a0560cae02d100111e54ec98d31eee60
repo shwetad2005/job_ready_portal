@@ -1,0 +1,16 @@
+package com.study.backend.validators;
+
+import com.study.backend.dtos.UserRequestDto;
+
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
+
+public class PasswordMatchValidator implements ConstraintValidator<PasswordMatch, UserRequestDto> {
+
+	@Override
+	public boolean isValid(UserRequestDto value, ConstraintValidatorContext context) {
+		// TODO Auto-generated method stub
+		return value.getPassword().equals(value.getConfirmPassword());
+	}
+
+}

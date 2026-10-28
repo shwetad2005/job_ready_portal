@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import api from "../api";
 
 function Register() {
 
@@ -24,52 +25,82 @@ function Register() {
         }
     });
 
-   const onSubmit = (data) => {
+ 
+// const onSubmit = async (data) => {
+//     try {
+//         // Send registration data to the Spring Boot backend
+//         const response = await fetch("http://localhost:8080/users", {
+//             method: "POST",
+//             headers: {
+//                 "Content-Type": "application/json"
+//             },
+//             body: JSON.stringify({
+//                 fullName: data.fullName.trim(),
+//                 email: data.email.trim().toLowerCase(),
+//                 password: data.password
+//             })
+//         });
 
-    const users =
-        JSON.parse(localStorage.getItem("users")) || [];
+//         // Handle backend errors
+//         if (!response.ok) {
+//             const errorText = await response.text();
+//             throw new Error(errorText || "Registration failed.");
+//         }
 
-    const email =
-        data.email.trim().toLowerCase();
+//         const registeredUser = await response.json();
 
-    // Check duplicate email
-    const alreadyRegistered = users.some(
-        (user) =>
-            user.email?.trim().toLowerCase() === email
-    );
+//         // Show success message and navigate to login
+//         alert(`Registration successful! Welcome ${registeredUser.fullName}`);
+//         navigate("/login");
 
-    if (alreadyRegistered) {
+//     } catch (error) {
+//         console.error("Registration error:", error);
+//         alert(error.message || "Unable to connect to the server.");
+//     }
+// };
 
-        setError("email", {
-            type: "manual",
-            message: "This email is already registered."
-        });
 
-        return;
+
+const onSubmit = async (data) => {
+    try {
+        // Remove confirmPassword before sending data to the backend
+        const userData = {
+            fullName: data.fullName.trim(),
+            email: data.email.trim().toLowerCase(),
+            password: data.password
+        };
+
+        // Send registration data to the Spring Boot backend
+        const response = await api.post("/users", userData);
+
+        // Display the registered user's name
+        console.log("Registration successful:", response.data);
+
+        alert(`Registration successful! Welcome ${response.data.fullName}`);
+
+        // Navigate to the login page after successful registration
+        navigate("/login");
+
+    } catch (error) {
+        // Display the error returned by the backend
+        console.error(
+            "Registration error:",
+            error.response?.data || error.message
+        );
+
+        if (error.response?.status === 409) {
+            alert("This email is already registered.");
+        } else {
+            alert(
+                error.response?.data?.message ||
+                "Registration failed! Please try again."
+            );
+        }
     }
-
-    // Create new user
-    const newUser = {
-        id: Date.now(),
-        fullName: data.fullName.trim(),
-        email: email,
-        password: data.password,
-        registeredAt: new Date().toISOString()
-    };
-
-    // Add user
-    users.push(newUser);
-
-    // Save all users
-    localStorage.setItem(
-        "users",
-        JSON.stringify(users)
-    );
-
-    alert("Registration Successful! 🎉");
-
-    navigate("/login");
 };
+
+
+
 
 
     return (
@@ -226,7 +257,7 @@ function Register() {
                                         htmlFor="fullName"
                                         className="form-label fw-semibold"
                                     >
-                                        Full Name
+                                        full Name
                                     </label>
 
                                     <input

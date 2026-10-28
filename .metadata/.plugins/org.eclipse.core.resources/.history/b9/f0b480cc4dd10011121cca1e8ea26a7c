@@ -1,0 +1,5 @@
+package com.study.backend.security;
+
+public class JwtService {
+
+}

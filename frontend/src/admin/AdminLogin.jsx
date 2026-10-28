@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../api";
 
 function AdminLogin() {
 
@@ -7,37 +8,48 @@ function AdminLogin() {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleLogin = (e) => {
-
+    const handleLogin = async (e) => {
         e.preventDefault();
+        setErrorMessage("");
+        setIsSubmitting(true);
 
-        // Demo admin credentials
-        const adminEmail = "admin@jobready.com";
-        const adminPassword = "admin123";
+        try {
+            const response = await api.post("/auth/login", {
+                email: email.trim().toLowerCase(),
+                password
+            });
+            const { user, token } = response.data;
 
-        if (
-            email === adminEmail &&
-            password === adminPassword
-        ) {
+            if (user.role !== "ROLE_ADMIN") {
+                setErrorMessage("This account does not have administrator access.");
+                return;
+            }
 
-            // Admin login information save
+            localStorage.setItem("user", JSON.stringify(user));
             localStorage.setItem(
                 "admin",
-                JSON.stringify({
-                    email: adminEmail,
-                    role: "admin"
-                })
+                JSON.stringify({ ...user, role: "admin" })
             );
-
-            alert("Admin Login Successful 🎉");
-
+            sessionStorage.setItem("authToken", token);
+            sessionStorage.setItem("isLoggedIn", "true");
             navigate("/admin/dashboard");
-
-        } else {
-
-            alert("Invalid Admin Email or Password ❌");
-
+        } catch (error) {
+            if (error.response?.status === 401) {
+                setErrorMessage("Invalid email or password.");
+            } else if (error.response) {
+                setErrorMessage(
+                    `The server couldn't complete your sign-in (error ${error.response.status}).`
+                );
+            } else {
+                setErrorMessage(
+                    "Can't connect to the sign-in server. Check that the backend is running."
+                );
+            }
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -74,6 +86,7 @@ function AdminLogin() {
                                     onChange={(e) =>
                                         setEmail(e.target.value)
                                     }
+                                    autoComplete="email"
                                     required
                                 />
 
@@ -93,26 +106,30 @@ function AdminLogin() {
                                     onChange={(e) =>
                                         setPassword(e.target.value)
                                     }
+                                    autoComplete="current-password"
                                     required
                                 />
 
                             </div>
 
+                            {errorMessage && (
+                                <div className="alert alert-danger" role="alert">
+                                    {errorMessage}
+                                </div>
+                            )}
+
                             <button
                                 type="submit"
                                 className="btn btn-dark w-100"
+                                disabled={isSubmitting}
                             >
-                                Login as Admin
+                                {isSubmitting ? "Signing in..." : "Login as Admin"}
                             </button>
 
                         </form>
 
                         <div className="alert alert-info mt-4 mb-0">
-                            <strong>Demo Login:</strong>
-                            <br />
-                            Email: admin@jobready.com
-                            <br />
-                            Password: admin123
+                            Sign in with an administrator account to manage JobReady.
                         </div>
 
                     </div>

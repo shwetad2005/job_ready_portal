@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">&#x0A;<refactoring comment="Delete resource &apos;backend-copy&apos;" deleteContents="false" description="Delete resource &apos;backend-copy&apos;" element1="/backend-copy" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1792755721470"/>&#x0A;<refactoring comment="Delete resource &apos;backend-copy&apos;" deleteContents="false" description="Delete resource &apos;backend-copy&apos;" element1="/backend-copy" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1792757176340"/>
+</session>

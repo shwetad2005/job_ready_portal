@@ -60,7 +60,9 @@ function Dashboard() {
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   const handleLogout = () => {
+    sessionStorage.removeItem("authToken");
     sessionStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("user");
     navigate("/login", { replace: true });
   };
 
@@ -76,6 +78,9 @@ function Dashboard() {
           <div className="dashboard-header-actions">
             <Link className="dashboard-progress-link" to="/progress">
               <FaChartLine aria-hidden="true" /> Progress
+            </Link>
+            <Link className="dashboard-progress-link" to="/my-results">
+              <FaChartLine aria-hidden="true" /> My results & exam help
             </Link>
             <button className="dashboard-logout" type="button" onClick={handleLogout}>
               <FaSignOutAlt aria-hidden="true" /> Log out

@@ -87,10 +87,10 @@ function AdminDashboard() {
     // =========================================
     const handleLogout = () => {
         localStorage.removeItem("admin");
-
-        alert("Admin Logout Successful");
-
-        navigate("/admin/login");
+        localStorage.removeItem("user");
+        sessionStorage.removeItem("authToken");
+        sessionStorage.removeItem("isLoggedIn");
+        navigate("/admin/login", { replace: true });
     };
 
     // =========================================
@@ -152,6 +152,15 @@ function AdminDashboard() {
             button: "View Results →",
             buttonClass: "btn-info text-white",
             path: "/admin/results",
+        },
+        {
+            title: "Exam Support",
+            description: "Review student exam complaints and update ticket status.",
+            icon: "🎫",
+            iconBg: "#fff7ed",
+            button: "View Tickets →",
+            buttonClass: "btn-warning",
+            path: "/admin/tickets",
         },
         {
             title: "Leaderboard",

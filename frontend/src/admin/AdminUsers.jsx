@@ -1,92 +1,112 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../api";
 
 function AdminUsers() {
 
     const navigate = useNavigate();
 
     const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    // Load all registered students
-    const loadUsers = () => {
+    // Modal states
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editingUser, setEditingUser] = useState(null);
 
-        // All registered users
-        let registeredUsers =
-            JSON.parse(localStorage.getItem("users")) || [];
+    // Form states
+    const [formData, setFormData] = useState({
+        fullName: "",
+        email: "",
+        password: ""
+    });
 
-        // Old/current user
-        const currentUser =
-            JSON.parse(localStorage.getItem("user"));
+    // Load all registered students from backend
+    const loadUsers = async () => {
+        setLoading(true);
+        setError(null);
 
-        /*
-         If old user exists but is not present
-         inside users array, add it.
-        */
-        if (currentUser && currentUser.email) {
+        try {
+            const response = await api.get("/users/students");
 
-            const alreadyExists =
-                registeredUsers.some(
-                    (user) =>
-                        user.email?.toLowerCase() ===
-                        currentUser.email.toLowerCase()
-                );
+            // Transform backend data to match frontend structure
+            const studentData = response.data.map((student) => ({
+                id: student.id,
+                name: student.fullName,
+                email: student.email,
+                attempts: student.attempts ? student.attempts.length : 0,
+                bestScore: calculateBestScore(student.attempts),
+            }));
 
-            if (!alreadyExists) {
-
-                registeredUsers.push({
-                    id: currentUser.id || Date.now(),
-                    fullName: currentUser.fullName || "",
-                    email: currentUser.email,
-                    password: currentUser.password || "",
-                    registeredAt:
-                        currentUser.registeredAt ||
-                        new Date().toISOString(),
-                });
-
-                localStorage.setItem(
-                    "users",
-                    JSON.stringify(registeredUsers)
-                );
-            }
+            setUsers(studentData);
+        } catch (err) {
+            setError(err.message);
+            console.error("Error loading students:", err);
+        } finally {
+            setLoading(false);
         }
+    };
 
-        // Test results
-        const results =
-            JSON.parse(
-                localStorage.getItem("weeklyScores")
-            ) || [];
+    // Calculate best score from attempts
+    const calculateBestScore = (attempts) => {
+        if (!attempts || attempts.length === 0) return 0;
+        return Math.max(...attempts.map((attempt) => attempt.score || 0));
+    };
 
-        // Prepare student data
-        const studentData =
-            registeredUsers.map((student) => {
+    // Handle form input changes
+    const handleInputChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        });
+    };
 
-                const studentResults =
-                    results.filter(
-                        (result) =>
-                            result.email === student.email ||
-                            result.name === student.fullName
-                    );
+    // Open create modal
+    const openCreateModal = () => {
+        setFormData({ fullName: "", email: "", password: "" });
+        setShowCreateModal(true);
+    };
 
-                const bestScore =
-                    studentResults.length > 0
-                        ? Math.max(
-                            ...studentResults.map(
-                                (result) =>
-                                    Number(result.score) || 0
-                            )
-                        )
-                        : 0;
+    // Open edit modal
+    const openEditModal = (user) => {
+        setEditingUser(user);
+        setFormData({
+            fullName: user.name,
+            email: user.email,
+            password: ""
+        });
+        setShowEditModal(true);
+    };
 
-                return {
-                    id: student.id,
-                    name: student.fullName,
-                    email: student.email,
-                    attempts: studentResults.length,
-                    bestScore: bestScore,
-                };
-            });
+    // Create new student
+    const handleCreate = async (e) => {
+        e.preventDefault();
 
-        setUsers(studentData);
+        try {
+            await api.post("/users", formData);
+            setShowCreateModal(false);
+            loadUsers();
+            alert("Student created successfully!");
+        } catch (err) {
+            alert("Error creating student: " + err.message);
+            console.error("Error creating student:", err);
+        }
+    };
+
+    // Update student
+    const handleUpdate = async (e) => {
+        e.preventDefault();
+
+        try {
+            await api.put(`/users/${editingUser.id}`, formData);
+            setShowEditModal(false);
+            loadUsers();
+            alert("Student updated successfully!");
+        } catch (err) {
+            alert("Error updating student: " + err.message);
+            console.error("Error updating student:", err);
+        }
     };
 
 
@@ -99,7 +119,7 @@ function AdminUsers() {
 
 
     // Delete student
-    const handleDelete = (email) => {
+    const handleDelete = async (id, email) => {
 
         const confirmDelete =
             window.confirm(
@@ -110,72 +130,26 @@ function AdminUsers() {
             return;
         }
 
-        // Get all users
-        const registeredUsers =
-            JSON.parse(
-                localStorage.getItem("users")
-            ) || [];
+        try {
+            await api.delete(`/users/${id}`);
 
-        // Remove selected student
-        const updatedUsers =
-            registeredUsers.filter(
-                (user) =>
-                    user.email !== email
+            // Refresh table
+            loadUsers();
+
+            alert(
+                "Student deleted successfully."
             );
-
-        // Save updated users
-        localStorage.setItem(
-            "users",
-            JSON.stringify(updatedUsers)
-        );
-
-
-        // Remove student's test results
-        const results =
-            JSON.parse(
-                localStorage.getItem("weeklyScores")
-            ) || [];
-
-        const studentToDelete =
-            registeredUsers.find(
-                (user) =>
-                    user.email === email
-            );
-
-        const updatedResults =
-            results.filter(
-                (result) =>
-                    result.email !== email &&
-                    result.name !==
-                    studentToDelete?.fullName
-            );
-
-        localStorage.setItem(
-            "weeklyScores",
-            JSON.stringify(updatedResults)
-        );
-
-
-        // If deleted student is currently logged in
-        const currentUser =
-            JSON.parse(
-                localStorage.getItem("user")
-            );
-
-        if (
-            currentUser &&
-            currentUser.email === email
-        ) {
-            localStorage.removeItem("user");
+        } catch (err) {
+            alert("Error deleting student: " + err.message);
+            console.error("Error deleting student:", err);
         }
+    };
 
-
-        // Refresh table
-        loadUsers();
-
-        alert(
-            "Student deleted successfully."
-        );
+    // Close modals
+    const closeModals = () => {
+        setShowCreateModal(false);
+        setShowEditModal(false);
+        setEditingUser(null);
     };
 
 
@@ -199,14 +173,23 @@ function AdminUsers() {
                 </div>
 
 
-                <button
-                    className="btn btn-dark"
-                    onClick={() =>
-                        navigate("/admin/dashboard")
-                    }
-                >
-                    ← Admin Dashboard
-                </button>
+                <div className="d-flex gap-2">
+                    <button
+                        className="btn btn-success"
+                        onClick={openCreateModal}
+                    >
+                        + Add Student
+                    </button>
+
+                    <button
+                        className="btn btn-dark"
+                        onClick={() =>
+                            navigate("/admin/dashboard")
+                        }
+                    >
+                        ← Admin Dashboard
+                    </button>
+                </div>
 
             </div>
 
@@ -214,6 +197,18 @@ function AdminUsers() {
             {/* Student Count */}
 
             <div className="mb-3">
+
+                {loading && (
+                    <span className="badge bg-warning text-dark fs-6 me-2">
+                        Loading...
+                    </span>
+                )}
+
+                {error && (
+                    <span className="badge bg-danger fs-6 me-2">
+                        Error: {error}
+                    </span>
+                )}
 
                 <span className="badge bg-primary fs-6">
                     Total Students: {users.length}
@@ -333,16 +328,28 @@ function AdminUsers() {
 
                                                 <td>
 
-                                                    <button
-                                                        className="btn btn-sm btn-danger"
-                                                        onClick={() =>
-                                                            handleDelete(
-                                                                user.email
-                                                            )
-                                                        }
-                                                    >
-                                                        Delete
-                                                    </button>
+                                                    <div className="d-flex gap-2 justify-content-center">
+                                                        <button
+                                                            className="btn btn-sm btn-primary"
+                                                            onClick={() =>
+                                                                openEditModal(user)
+                                                            }
+                                                        >
+                                                            Edit
+                                                        </button>
+
+                                                        <button
+                                                            className="btn btn-sm btn-danger"
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    user.id,
+                                                                    user.email
+                                                                )
+                                                            }
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </div>
 
                                                 </td>
 
@@ -362,6 +369,165 @@ function AdminUsers() {
                 </div>
 
             </div>
+
+            {/* Create Student Modal */}
+            {showCreateModal && (
+                <div
+                    className="modal show d-block"
+                    style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+                    tabIndex="-1"
+                >
+                    <div className="modal-dialog">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Add New Student</h5>
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={closeModals}
+                                ></button>
+                            </div>
+                            <div className="modal-body">
+                                <form onSubmit={handleCreate}>
+                                    <div className="mb-3">
+                                        <label className="form-label fw-semibold">
+                                            Full Name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            name="fullName"
+                                            value={formData.fullName}
+                                            onChange={handleInputChange}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label className="form-label fw-semibold">
+                                            Email
+                                        </label>
+                                        <input
+                                            type="email"
+                                            className="form-control"
+                                            name="email"
+                                            value={formData.email}
+                                            onChange={handleInputChange}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label className="form-label fw-semibold">
+                                            Password
+                                        </label>
+                                        <input
+                                            type="password"
+                                            className="form-control"
+                                            name="password"
+                                            value={formData.password}
+                                            onChange={handleInputChange}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="d-flex gap-2 justify-content-end">
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary"
+                                            onClick={closeModals}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="btn btn-success"
+                                        >
+                                            Create Student
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Student Modal */}
+            {showEditModal && (
+                <div
+                    className="modal show d-block"
+                    style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+                    tabIndex="-1"
+                >
+                    <div className="modal-dialog">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Edit Student</h5>
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={closeModals}
+                                ></button>
+                            </div>
+                            <div className="modal-body">
+                                <form onSubmit={handleUpdate}>
+                                    <div className="mb-3">
+                                        <label className="form-label fw-semibold">
+                                            Full Name
+                                        </label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            name="fullName"
+                                            value={formData.fullName}
+                                            onChange={handleInputChange}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label className="form-label fw-semibold">
+                                            Email
+                                        </label>
+                                        <input
+                                            type="email"
+                                            className="form-control"
+                                            name="email"
+                                            value={formData.email}
+                                            onChange={handleInputChange}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label className="form-label fw-semibold">
+                                            Password (leave blank to keep current)
+                                        </label>
+                                        <input
+                                            type="password"
+                                            className="form-control"
+                                            name="password"
+                                            value={formData.password}
+                                            onChange={handleInputChange}
+                                        />
+                                    </div>
+                                    <div className="d-flex gap-2 justify-content-end">
+                                        <button
+                                            type="button"
+                                            className="btn btn-secondary"
+                                            onClick={closeModals}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="btn btn-primary"
+                                        >
+                                            Update Student
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div>
     );

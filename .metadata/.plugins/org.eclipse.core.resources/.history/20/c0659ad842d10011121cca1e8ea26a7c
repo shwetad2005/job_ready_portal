@@ -1,0 +1,24 @@
+package com.study.backend.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+	
+	@Bean
+	public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity)
+	{
+		httpSecurity.authorizeHttpRequests(request->
+		request.requestMatchers(HttpMethod.POST,"/users/**").permitAll()     // public URL : do not need login
+		)
+		.httpBasic(Customizer.withDefaults());   // basic authentication detail
+
+		return httpSecurity.build();
+	}
+
+}

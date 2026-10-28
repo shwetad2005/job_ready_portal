@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import api from "../api";
 
 function Login() {
 
@@ -8,59 +9,45 @@ function Login() {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleLogin = (e) => {
-
+    const handleLogin = async (e) => {
         e.preventDefault();
+        setErrorMessage("");
+        setIsSubmitting(true);
 
-        // Get all registered users
-        const users =
-            JSON.parse(localStorage.getItem("users")) || [];
+        try {
+            const response = await api.post("/auth/login", {
+                email: email.trim().toLowerCase(),
+                password
+            });
 
-        // Remove extra spaces and make email lowercase
-        const enteredEmail =
-            email.trim().toLowerCase();
+            localStorage.setItem("user", JSON.stringify(response.data.user));
+            sessionStorage.setItem("authToken", response.data.token);
+            sessionStorage.setItem("isLoggedIn", "true");
 
-        const enteredPassword =
-            password;
-
-        // Find matching user
-        const loggedInUser = users.find(
-            (user) =>
-                user.email?.trim().toLowerCase() ===
-                    enteredEmail &&
-                user.password === enteredPassword
-        );
-
-        // User not found
-        if (!loggedInUser) {
-
-            alert("Invalid Email or Password.");
-
-            return;
+            const redirectTo = response.data.user.role === "ROLE_ADMIN"
+                ? "/admin/dashboard"
+                : location.state?.redirectTo || "/dashboard";
+            navigate(redirectTo, { replace: true });
+        } catch (error) {
+            if (error.response?.status === 401) {
+                setErrorMessage("Invalid email or password.");
+            } else if (error.response?.status === 400) {
+                setErrorMessage("Please enter a valid email and password.");
+            } else if (error.response) {
+                setErrorMessage(
+                    `The server couldn't complete your sign-in (error ${error.response.status}). Please try again.`
+                );
+            } else {
+                setErrorMessage(
+                    "Can't connect to the sign-in server. Check that the backend is running and try again."
+                );
+            }
+        } finally {
+            setIsSubmitting(false);
         }
-
-        // Save currently logged-in user
-        localStorage.setItem(
-            "user",
-            JSON.stringify(loggedInUser)
-        );
-
-        // Login session
-        sessionStorage.setItem(
-            "isLoggedIn",
-            "true"
-        );
-
-        alert("Login Successful 🎉");
-
-        // Redirect to requested page
-        const redirectTo =
-            location.state?.redirectTo ||
-            "/dashboard";
-
-        navigate(redirectTo);
-
     };
 
 
@@ -96,6 +83,7 @@ function Login() {
                                     onChange={(e) =>
                                         setEmail(e.target.value)
                                     }
+                                    autoComplete="email"
                                     required
                                 />
 
@@ -118,19 +106,26 @@ function Login() {
                                     onChange={(e) =>
                                         setPassword(e.target.value)
                                     }
+                                    autoComplete="current-password"
                                     required
                                 />
 
                             </div>
 
+                            {errorMessage && (
+                                <div className="alert alert-danger" role="alert">
+                                    {errorMessage}
+                                </div>
+                            )}
 
                             {/* LOGIN BUTTON */}
 
                             <button
                                 type="submit"
                                 className="btn btn-primary w-100"
+                                disabled={isSubmitting}
                             >
-                                Login
+                                {isSubmitting ? "Signing in..." : "Login"}
                             </button>
 
                         </form>
