@@ -1,5 +1,6 @@
 package com.study.backend.dtos;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.validation.Valid;
@@ -15,4 +16,7 @@ public class TestAttemptRequestDto {
 
     @NotNull
     private List<@Valid SubmittedAnswerDto> answers;
+
+    @NotNull
+    private LocalDateTime startTime;
 }

@@ -1,0 +1,97 @@
+package com.study.backend.services.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+
+@Service
+public class TestServiceImpl implements TestService {
+
+    @Autowired
+    private TestRepository testRepository;
+
+    @Autowired
+    private TestAttemptRepository testAttemptRepository;
+
+    @Override
+    public Test createTest(Test test) {
+        test.setIsPublished(false);
+        return testRepository.save(test);
+    }
+
+    @Override
+    public Test getTestById(String id) {
+        return testRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Test not found with ID: " + id));
+    }
+
+    @Override
+    public List<Test> getAllTests() {
+        return testRepository.findByOrderByCreatedAtDesc();
+    }
+
+    @Override
+    public List<Test> getActiveTests() {
+        return testRepository.findByIsActiveTrueOrderByDeadlineAsc();
+    }
+
+    @Override
+    public List<Test> getPublishedTests() {
+        return testRepository.findByIsPublishedTrueAndIsActiveTrueOrderByDeadlineAsc();
+    }
+
+    @Override
+    public List<Test> getPublishedTestsByCategory(TestCategory category) {
+        return testRepository
+                .findByCategoryAndIsPublishedTrueAndIsActiveTrueOrderByDeadlineAsc(category);
+    }
+
+    @Override
+    public Test publishTest(String id) {
+        Test test = getTestById(id);
+        test.setIsPublished(true);
+        return testRepository.save(test);
+    }
+
+    @Override
+    public Test updateTest(String id, Test test) {
+        Test existingTest = getTestById(id);
+
+        existingTest.setTitle(test.getTitle());
+        existingTest.setDescription(test.getDescription());
+        if (test.getCategory() != null) {
+            existingTest.setCategory(test.getCategory());
+        }
+        existingTest.setDeadline(test.getDeadline());
+        existingTest.setDurationMinutes(test.getDurationMinutes());
+        existingTest.setTotalMarks(test.getTotalMarks());
+        existingTest.setIsActive(test.getIsActive());
+        existingTest.setIsPublished(
+                Boolean.TRUE.equals(existingTest.getIsPublished())
+                        || Boolean.TRUE.equals(test.getIsPublished()));
+
+        return testRepository.save(existingTest);
+    }
+
+    @Override
+    @Transactional
+    public void deleteTest(String id) {
+        Test test = getTestById(id);
+        
+        // Delete all test attempts for this test first
+        List<TestAttempt> attempts = testAttemptRepository.findAll();
+        attempts.stream()
+            .filter(attempt -> attempt.getTest() != null && attempt.getTest().getId().equals(id))
+            .forEach(attempt -> testAttemptRepository.delete(attempt));
+        
+        // Clear questions to avoid cascade issues
+        if (test.getQuestions() != null) {
+            test.getQuestions().clear();
+        }
+        testRepository.save(test);
+        testRepository.delete(test);
+    }
+}

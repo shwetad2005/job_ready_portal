@@ -8,9 +8,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
+import com.study.backend.services.QuestionService;
+import com.study.backend.dtos.BulkQuestionImportDto;
 import com.study.backend.entities.Question;
 import com.study.backend.repositories.QuestionRepository;
-import com.study.backend.services.QuestionService;
 
 @RestController
 @RequestMapping("/questions")
@@ -29,6 +31,14 @@ public class QuestionController {
             @RequestBody Question question) {
         Question savedQuestion = questionService.createQuestion(question);
         return new ResponseEntity<>(savedQuestion, HttpStatus.CREATED);
+    }
+
+    // Bulk import questions
+    @PostMapping("/bulk")
+    public ResponseEntity<List<Question>> bulkImportQuestions(
+            @RequestBody BulkQuestionImportDto bulkImportDto) {
+        List<Question> importedQuestions = questionService.bulkImportQuestions(bulkImportDto);
+        return new ResponseEntity<>(importedQuestions, HttpStatus.CREATED);
     }
 
     // Get all questions

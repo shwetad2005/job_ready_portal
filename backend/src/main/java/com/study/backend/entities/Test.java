@@ -49,7 +49,10 @@ public class Test {
     private Integer durationMinutes = 60;
 
     @Column(nullable = false)
-    private Integer totalMarks = 100;
+    private Integer totalMarks = 50;
+
+    @Column(nullable = false)
+    private Integer marksPerQuestion = 1;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -63,6 +66,9 @@ public class Test {
     @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Question> questions = new ArrayList<>();
+
+    @Column(name = "question_count")
+    private Integer questionCount = 0;
 
     @PrePersist
     public void onCreate() {

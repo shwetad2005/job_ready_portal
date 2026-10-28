@@ -21,7 +21,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 @Configuration
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationFilter  jwtAuthenticationFilter;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
@@ -90,6 +90,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/tickets/mine").hasRole("STUDENT")
                 .requestMatchers(HttpMethod.GET, "/tickets").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PATCH, "/tickets/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/tests/**").hasRole("ADMIN")
                 .requestMatchers("/questions/**").permitAll()
                 .requestMatchers("/tests/**").permitAll()
                 .anyRequest().authenticated()

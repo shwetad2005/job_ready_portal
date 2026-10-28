@@ -1,16 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <qualifiedTypeNameHistroy>
-    <fullyQualifiedTypeName name="jakarta.persistence.Enumerated"/>
-    <fullyQualifiedTypeName name="jakarta.persistence.EnumeratedValue"/>
-    <fullyQualifiedTypeName name="jakarta.persistence.EnumType"/>
-    <fullyQualifiedTypeName name="com.study.backend.entities.TestAttempt"/>
-    <fullyQualifiedTypeName name="java.util.List"/>
-    <fullyQualifiedTypeName name="java.util.ArrayList"/>
-    <fullyQualifiedTypeName name="jakarta.persistence.OneToMany"/>
-    <fullyQualifiedTypeName name="org.hibernate.annotations.ManyToAny"/>
-    <fullyQualifiedTypeName name="lombok.Data"/>
-    <fullyQualifiedTypeName name="lombok.AllArgsConstructor"/>
-    <fullyQualifiedTypeName name="lombok.NoArgsConstructor"/>
     <fullyQualifiedTypeName name="jakarta.persistence.Entity"/>
     <fullyQualifiedTypeName name="jakarta.persistence.Table"/>
     <fullyQualifiedTypeName name="jakarta.persistence.Id"/>
@@ -28,7 +17,6 @@
     <fullyQualifiedTypeName name="org.springframework.beans.factory.annotation.Autowired"/>
     <fullyQualifiedTypeName name="com.study.backend.repositories.UserRepository"/>
     <fullyQualifiedTypeName name="org.springframework.data.jpa.repository.JpaRepository"/>
-    <fullyQualifiedTypeName name="com.study.backend.entities.Question"/>
     <fullyQualifiedTypeName name="java.lang.Long"/>
     <fullyQualifiedTypeName name="java.lang.String"/>
     <fullyQualifiedTypeName name="java.lang.Integer"/>
@@ -50,7 +38,6 @@
     <fullyQualifiedTypeName name="org.apache.catalina.filters.HttpHeaderSecurityFilter"/>
     <fullyQualifiedTypeName name="org.springframework.security.web.SecurityFilterChain"/>
     <fullyQualifiedTypeName name="org.springframework.security.config.annotation.web.builders.HttpSecurity"/>
-    <fullyQualifiedTypeName name="org.springframework.context.annotation.Bean"/>
     <fullyQualifiedTypeName name="org.springframework.security.config.Customizer"/>
     <fullyQualifiedTypeName name="org.springframework.security.crypto.password.PasswordEncoder"/>
     <fullyQualifiedTypeName name="com.study.backend.services.impl.UserServiceImpl"/>
@@ -60,4 +47,17 @@
     <fullyQualifiedTypeName name="org.springframework.security.core.AuthenticationException"/>
     <fullyQualifiedTypeName name="org.springframework.http.HttpMethod"/>
     <fullyQualifiedTypeName name="org.springframework.security.core.userdetails.UserDetails"/>
+    <fullyQualifiedTypeName name="com.study.backend.entities.TestAttempt"/>
+    <fullyQualifiedTypeName name="com.study.backend.repositories.TestAttemptRepository"/>
+    <fullyQualifiedTypeName name="org.springframework.security.authentication.AuthenticationProvider"/>
+    <fullyQualifiedTypeName name="org.springframework.security.authentication.AuthenticationManager"/>
+    <fullyQualifiedTypeName name="org.springframework.security.authentication.ProviderManager"/>
+    <fullyQualifiedTypeName name="com.study.backend.security.JwtAuthenticationFilter"/>
+    <fullyQualifiedTypeName name="org.springframework.context.annotation.Bean"/>
+    <fullyQualifiedTypeName name="com.study.backend.repositories.QuestionRepository"/>
+    <fullyQualifiedTypeName name="com.study.backend.entities.Question"/>
+    <fullyQualifiedTypeName name="com.study.backend.services.TestService"/>
+    <fullyQualifiedTypeName name="com.study.backend.repositories.TestRepository"/>
+    <fullyQualifiedTypeName name="com.study.backend.entities.Test"/>
+    <fullyQualifiedTypeName name="com.study.backend.entities.TestCategory"/>
 </qualifiedTypeNameHistroy>

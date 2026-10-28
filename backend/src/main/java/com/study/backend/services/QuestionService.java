@@ -4,6 +4,7 @@ package com.study.backend.services;
 
 import java.util.List;
 
+import com.study.backend.dtos.BulkQuestionImportDto;
 import com.study.backend.entities.Question;
 
 public interface QuestionService {
@@ -28,4 +29,7 @@ public interface QuestionService {
 
     // Delete a question by ID
     void deleteQuestion(Integer id);
+
+    // Bulk import questions
+    List<Question> bulkImportQuestions(BulkQuestionImportDto bulkImportDto);
 }

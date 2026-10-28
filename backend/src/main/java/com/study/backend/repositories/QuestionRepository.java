@@ -13,6 +13,9 @@ public interface QuestionRepository extends JpaRepository<Question, Integer> {
     @Query("SELECT q FROM Question q WHERE q.test IS NOT NULL AND q.test.id = :testId")
     List<Question> findByTestId(@Param("testId") String testId);
 
+    @Query("SELECT COUNT(q) FROM Question q WHERE q.test.id = :testId")
+    long countByTestId(@Param("testId") String testId);
+
     @Query("""
             SELECT q FROM Question q
             JOIN q.test sourceTest
@@ -38,4 +41,7 @@ public interface QuestionRepository extends JpaRepository<Question, Integer> {
     boolean existsInTestByQuestionText(
             @Param("testId") String testId,
             @Param("questionText") String questionText);
+
+    @Query("SELECT COALESCE(SUM(q.marks), 0) FROM Question q WHERE q.test.id = :testId")
+    int sumMarksByTestId(@Param("testId") String testId);
 }

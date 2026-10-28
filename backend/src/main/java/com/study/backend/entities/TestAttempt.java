@@ -33,7 +33,10 @@ public class TestAttempt {
 
 	@Column
 	private Integer totalMarks = 0;
-	
+
+	@Column
+	private Integer timeTakenSeconds = 0;
+
 	@ManyToOne
 	private User user;
 	

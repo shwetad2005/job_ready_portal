@@ -1,3 +1,4 @@
+
 package com.study.backend.dtos;
 
 import java.time.LocalDateTime;
@@ -20,5 +21,6 @@ public class TestAttemptResponseDto {
     private Integer total;
     private Integer percentage;
     private LocalDateTime attemptedAt;
+    private Integer timeTakenSeconds;
     private List<AttemptAnswerResponseDto> answers;
 }

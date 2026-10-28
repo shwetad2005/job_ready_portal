@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     FiArrowLeft,
@@ -12,7 +12,7 @@ import {
 //import aptitudeQuestions from "../data/aptitudeQuestions";
 import api from "../api";
 
-const TEST_DURATION_SECONDS = 30 * 60;
+// Duration will be calculated based on total marks (60 minutes for 50-mark tests)
 
 function Quantitative() {
 
@@ -30,8 +30,7 @@ function Quantitative() {
 
     const [skippedQuestions, setSkippedQuestions] = useState([]);
 
-    const [timeLeft, setTimeLeft] =
-        useState(TEST_DURATION_SECONDS);
+    const [timeLeft, setTimeLeft] = useState(0);
 
     // Prevent test from being submitted multiple times
     const [testFinished, setTestFinished] =
@@ -143,6 +142,13 @@ setQuizQuestions(aptitudeAdminQuestions);
         setSkippedQuestions(
           Array(aptitudeAdminQuestions.length).fill(false)
         );
+
+        // Calculate total marks from questions
+        const totalMarks = aptitudeAdminQuestions.reduce((sum, q) => sum + (q.marks || 1), 0);
+
+        // Set timer: 60 minutes for 50-mark tests, otherwise 1 minute per question minimum
+        const durationMinutes = totalMarks === 50 ? 60 : Math.max(aptitudeAdminQuestions.length, 30);
+        setTimeLeft(durationMinutes * 60);
       } catch (error) {
         console.error(
           "Error loading Aptitude questions:",
@@ -205,7 +211,7 @@ setQuizQuestions(aptitudeAdminQuestions);
     // FINISH TEST
     // =========================================
 
-    const finishTest = (
+    const finishTest = useCallback((
         finalAnswers = answers
     ) => {
 
@@ -217,19 +223,23 @@ setQuizQuestions(aptitudeAdminQuestions);
         setTestFinished(true);
 
 
-        // Calculate score
+        // Calculate score using question marks
         let totalScore = 0;
+        let totalMarks = 0;
 
 
         quizQuestions.forEach(
             (questionItem, index) => {
+
+                const questionMarks = questionItem.marks || 1;
+                totalMarks += questionMarks;
 
                 if (
                     finalAnswers[index] ===
                     questionItem.answer
                 ) {
 
-                    totalScore++;
+                    totalScore += questionMarks;
 
                 }
 
@@ -262,11 +272,11 @@ setQuizQuestions(aptitudeAdminQuestions);
         // =========================================
 
         const percentage =
-            totalQuestions > 0
+            totalMarks > 0
                 ? Math.round(
                     (
                         totalScore /
-                        totalQuestions
+                        totalMarks
                     ) * 100
                 )
                 : 0;
@@ -306,7 +316,7 @@ setQuizQuestions(aptitudeAdminQuestions);
 
             score: totalScore,
 
-            total: totalQuestions,
+            total: totalMarks,
 
             percentage: percentage,
 
@@ -340,7 +350,7 @@ setQuizQuestions(aptitudeAdminQuestions);
 
                     score: totalScore,
 
-                    total: totalQuestions,
+                    total: totalMarks,
 
                     percentage: percentage,
 
@@ -352,7 +362,7 @@ setQuizQuestions(aptitudeAdminQuestions);
             }
         );
 
-    };
+    }, [testFinished, quizQuestions, answers, navigate]);
 
 
     // =========================================
@@ -361,21 +371,22 @@ setQuizQuestions(aptitudeAdminQuestions);
 
     useEffect(() => {
 
+        // Don't start timer if timeLeft is 0 (questions not loaded yet)
         if (timeLeft <= 0) {
-
-            finishTest();
-
             return;
-
         }
-
 
         const timerId =
             setInterval(() => {
 
                 setTimeLeft(
-                    (remainingTime) =>
-                        remainingTime - 1
+                    (remainingTime) => {
+                        if (remainingTime <= 1) {
+                            finishTest();
+                            return 0;
+                        }
+                        return remainingTime - 1;
+                    }
                 );
 
             }, 1000);
@@ -384,7 +395,7 @@ setQuizQuestions(aptitudeAdminQuestions);
         return () =>
             clearInterval(timerId);
 
-    }, [timeLeft]);
+    }, [timeLeft, finishTest, testFinished]);
 
 
     // =========================================

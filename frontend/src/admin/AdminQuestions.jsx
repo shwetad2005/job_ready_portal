@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
+import * as XLSX from "xlsx";
 
 const testCategories = [
     { value: "APTITUDE", label: "Aptitude" },
@@ -19,6 +20,7 @@ function AdminQuestions() {
         option3: "",
         option4: "",
         answer: "",
+        marks: 1,
     };
 
     const emptyTestForm = {
@@ -27,7 +29,8 @@ function AdminQuestions() {
         category: "APTITUDE",
         deadline: "",
         durationMinutes: 60,
-        totalMarks: 100,
+        totalMarks: 50,
+        marksPerQuestion: 1,
         isActive: true,
         isPublished: false,
     };
@@ -52,6 +55,8 @@ function AdminQuestions() {
 
     const [showTestModal, setShowTestModal] = useState(false);
     const [viewMode, setViewMode] = useState("tests"); // "tests" or "questions"
+    const [excelFile, setExcelFile] = useState(null);
+    const [uploading, setUploading] = useState(false);
 
     // Load questions and tests from backend
     useEffect(() => {
@@ -155,6 +160,7 @@ function AdminQuestions() {
                 selectedReusableQuestionIds
             );
             await fetchQuestionsByTest(selectedTest);
+            await fetchTests(); // Refresh tests to update total marks and duration
         } catch (error) {
             console.error("Error reusing questions:", error);
             setReuseError(
@@ -169,10 +175,10 @@ function AdminQuestions() {
     };
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value, type } = e.target;
         setForm({
             ...form,
-            [name]: value,
+            [name]: type === "number" ? parseInt(value) || 0 : value,
         });
     };
 
@@ -199,6 +205,10 @@ function AdminQuestions() {
             return;
         }
 
+        // Get the test's marks per question if adding to a test
+        const test = tests.find((t) => t.id === selectedTest);
+        const defaultMarks = test?.marksPerQuestion || 1;
+
         const questionData = {
             questionText: form.question,
             optionA: form.option1,
@@ -206,7 +216,7 @@ function AdminQuestions() {
             optionC: form.option3,
             optionD: form.option4,
             correctAnswer: form.answer,
-            marks: 1,
+            marks: form.marks || defaultMarks,
         };
 
         if (selectedTest) {
@@ -224,6 +234,7 @@ function AdminQuestions() {
 
             if (selectedTest) {
                 await fetchQuestionsByTest(selectedTest);
+                await fetchTests(); // Refresh tests to update total marks and duration
             } else {
                 await fetchQuestions();
             }
@@ -288,6 +299,7 @@ function AdminQuestions() {
             deadline: test.deadline ? test.deadline.slice(0, 16) : "",
             durationMinutes: test.durationMinutes,
             totalMarks: test.totalMarks,
+            marksPerQuestion: test.marksPerQuestion || 1,
             isActive: test.isActive,
             isPublished: test.isPublished,
         });
@@ -331,6 +343,7 @@ function AdminQuestions() {
             option3: question.options[2] || "",
             option4: question.options[3] || "",
             answer: question.answer,
+            marks: question.marks || 1,
         });
 
         window.scrollTo({
@@ -351,6 +364,7 @@ function AdminQuestions() {
             alert("Question deleted successfully!");
             if (selectedTest) {
                 await fetchQuestionsByTest(selectedTest);
+                await fetchTests(); // Refresh tests to update total marks and duration
             } else {
                 await fetchQuestions();
             }
@@ -369,6 +383,62 @@ function AdminQuestions() {
         setShowTestModal(false);
         setTestForm(emptyTestForm);
         setEditingTestId(null);
+    };
+
+    const handleExcelUpload = async () => {
+        if (!excelFile) {
+            alert("Please select an Excel file first.");
+            return;
+        }
+
+        if (!selectedTest) {
+            alert("Please select a test first before importing questions.");
+            return;
+        }
+
+        setUploading(true);
+
+        try {
+            const data = await excelFile.arrayBuffer();
+            const workbook = XLSX.read(data);
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+            const questionsToImport = jsonData.map((row, index) => ({
+                questionText: row["Question"] || row["question"] || row["Question Text"] || "",
+                category: row["Category"] || row["category"] || testCategories.find(({ value }) => value === selectedTest?.category)?.label || "Aptitude",
+                optionA: row["Option A"] || row["optionA"] || row["Option A"] || "",
+                optionB: row["Option B"] || row["optionB"] || row["Option B"] || "",
+                optionC: row["Option C"] || row["optionC"] || row["Option C"] || "",
+                optionD: row["Option D"] || row["optionD"] || row["Option D"] || "",
+                correctAnswer: row["Correct Answer"] || row["correctAnswer"] || row["Answer"] || row["Correct Answer"] || "",
+                explanation: row["Explanation"] || row["explanation"] || "",
+                marks: parseInt(row["Marks"] || row["marks"] || "1") || 1,
+                testId: selectedTest,
+            })).filter(q => q.questionText && q.optionA && q.optionB && q.optionC && q.optionD && q.correctAnswer);
+
+            if (questionsToImport.length === 0) {
+                alert("No valid questions found in the Excel file. Please ensure your Excel has columns: Question, Option A, Option B, Option C, Option D, Correct Answer, Category, Marks, Explanation");
+                setUploading(false);
+                return;
+            }
+
+            const response = await api.post("/questions/bulk", {
+                questions: questionsToImport,
+            });
+
+            alert(`Successfully imported ${questionsToImport.length} questions!`);
+            await fetchQuestionsByTest(selectedTest);
+            await fetchTests(); // Refresh tests to update total marks and duration
+            setExcelFile(null);
+            document.getElementById("excelUpload").value = "";
+        } catch (error) {
+            console.error("Error importing questions:", error);
+            alert("Failed to import questions. Please check the Excel file format.");
+        } finally {
+            setUploading(false);
+        }
     };
 
     const filteredQuestions = questions.filter((question) => {
@@ -396,6 +466,16 @@ function AdminQuestions() {
         if (!dateString) return "Not set";
         return new Date(dateString).toLocaleString();
     };
+
+    // Calculate max questions and duration based on test form values
+    const calculateTestStats = (totalMarks, marksPerQuestion) => {
+        const maxQuestions = totalMarks / marksPerQuestion;
+        // For 50-mark tests, use 60 minutes. For others, use 1 minute per question minimum
+        const duration = totalMarks === 50 ? 60 : Math.max(maxQuestions, 20);
+        return { maxQuestions, duration };
+    };
+
+    const testStats = calculateTestStats(testForm.totalMarks, testForm.marksPerQuestion);
 
     return (
         <div className="container mt-5 mb-5">
@@ -449,19 +529,25 @@ function AdminQuestions() {
             {/* Tests View */}
             {viewMode === "tests" && (
                 <>
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h3 className="fw-bold">Tests</h3>
+                    <div className="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h3 className="fw-bold mb-1">Tests</h3>
+                            <p className="text-secondary small mb-0">Manage your tests and question banks</p>
+                        </div>
                         <button
-                            className="btn btn-success"
+                            className="btn btn-success shadow-sm"
                             onClick={() => setShowTestModal(true)}
                         >
-                            + Create Test
+                            <span className="me-1">+</span> Create Test
                         </button>
                     </div>
 
                     {tests.length === 0 ? (
-                        <div className="card shadow-sm">
+                        <div className="card shadow-sm border-0">
                             <div className="card-body text-center py-5">
+                                <div className="mb-3">
+                                    <span style={{ fontSize: "3rem" }}>📝</span>
+                                </div>
                                 <h4 className="text-secondary">No tests created yet</h4>
                                 <p className="text-secondary">Click "Create Test" to get started</p>
                             </div>
@@ -470,33 +556,57 @@ function AdminQuestions() {
                         <div className="row">
                             {tests.map((test) => (
                                 <div className="col-md-6 col-lg-4 mb-4" key={test.id}>
-                                    <div className="card shadow-sm h-100">
+                                    <div className="card shadow-sm h-100 border-0 hover-shadow transition-all">
                                         <div className="card-body">
-                                            <div className="d-flex justify-content-between align-items-start mb-2">
+                                            <div className="d-flex justify-content-between align-items-start mb-3">
                                                 <div>
-                                                    <h5 className="card-title fw-bold">{test.title}</h5>
-                                                    <span className="badge bg-primary">
-                                                        {testCategories.find(({ value }) => value === test.category)?.label || "Aptitude"}
-                                                    </span>
+                                                    <h5 className="card-title fw-bold mb-2">{test.title}</h5>
+                                                    <div className="d-flex gap-2 flex-wrap">
+                                                        <span className="badge bg-primary rounded-pill">
+                                                            {testCategories.find(({ value }) => value === test.category)?.label || "Aptitude"}
+                                                        </span>
+                                                        {test.isPublished ? (
+                                                            <span className="badge bg-success rounded-pill">Published</span>
+                                                        ) : (
+                                                            <span className="badge bg-warning text-dark rounded-pill">Draft</span>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                {test.isPublished ? (
-                                                    <span className="badge bg-success">Published</span>
-                                                ) : (
-                                                    <span className="badge bg-warning text-dark">Draft</span>
-                                                )}
                                             </div>
-                                            <p className="card-text text-secondary small">
+                                            <p className="card-text text-secondary small mb-3" style={{ minHeight: "40px" }}>
                                                 {test.description || "No description"}
                                             </p>
-                                            <div className="small text-secondary mb-3">
-                                                <div>📅 Deadline: {formatDate(test.deadline)}</div>
-                                                <div>⏱️ Duration: {test.durationMinutes} mins</div>
-                                                <div>📊 Total Marks: {test.totalMarks}</div>
-                                                <div>❓ Questions: {test.questions?.length || 0}</div>
+                                            <div className="bg-light rounded p-3 mb-3">
+                                                <div className="row g-2">
+                                                    <div className="col-6">
+                                                        <div className="small text-muted mb-1">📅 Deadline</div>
+                                                        <div className="fw-semibold small">{formatDate(test.deadline)}</div>
+                                                    </div>
+                                                    <div className="col-6">
+                                                        <div className="small text-muted mb-1">⏱️ Duration</div>
+                                                        <div className="fw-semibold small">{test.durationMinutes} mins</div>
+                                                    </div>
+                                                    <div className="col-6">
+                                                        <div className="small text-muted mb-1">📊 Total Marks</div>
+                                                        <div className="fw-semibold small">{test.totalMarks}</div>
+                                                    </div>
+                                                    <div className="col-6">
+                                                        <div className="small text-muted mb-1">❓ Questions</div>
+                                                        <div className="fw-semibold small text-primary">{test.questionCount || 0}</div>
+                                                    </div>
+                                                    <div className="col-6">
+                                                        <div className="small text-muted mb-1">📝 Marks/Question</div>
+                                                        <div className="fw-semibold small">{test.marksPerQuestion || 1}</div>
+                                                    </div>
+                                                    <div className="col-6">
+                                                        <div className="small text-muted mb-1">🎯 Max Questions</div>
+                                                        <div className="fw-semibold small">{test.totalMarks / (test.marksPerQuestion || 1)}</div>
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div className="d-flex gap-2 flex-wrap">
                                                 <button
-                                                    className="btn btn-sm btn-primary"
+                                                    className="btn btn-sm btn-primary flex-grow-1"
                                                     onClick={() => fetchQuestionsByTest(test.id)}
                                                 >
                                                     {test.isPublished ? "View Questions" : "Manage Questions"}
@@ -552,6 +662,31 @@ function AdminQuestions() {
                             >
                                 ← Back to Tests
                             </button>
+                        </div>
+                        <div>
+                            <input
+                                type="file"
+                                accept=".xlsx, .xls"
+                                onChange={(e) => setExcelFile(e.target.files[0])}
+                                style={{ display: "none" }}
+                                id="excelUpload"
+                            />
+                            <label
+                                htmlFor="excelUpload"
+                                className="btn btn-success btn-sm mb-2"
+                                disabled={uploading}
+                            >
+                                {uploading ? "Uploading..." : "📊 Import from Excel"}
+                            </label>
+                            {excelFile && (
+                                <button
+                                    className="btn btn-primary btn-sm mb-2"
+                                    onClick={handleExcelUpload}
+                                    disabled={uploading}
+                                >
+                                    Upload
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -778,6 +913,27 @@ function AdminQuestions() {
                                     </select>
                                 </div>
 
+                                <div className="mb-4">
+                                    <label className="form-label fw-semibold">Marks</label>
+                                    <input
+                                        type="number"
+                                        className="form-control"
+                                        name="marks"
+                                        value={form.marks}
+                                        onChange={handleChange}
+                                        min="1"
+                                        required
+                                    />
+                                    {selectedTest && (
+                                        <small className="text-muted">
+                                            Test marks per question: {tests.find((t) => t.id === selectedTest)?.marksPerQuestion || 1}
+                                        </small>
+                                    )}
+                                    {!selectedTest && (
+                                        <small className="text-muted">Points awarded for this question</small>
+                                    )}
+                                </div>
+
                                 <button type="submit" className="btn btn-primary px-4 me-2">
                                     {editingId ? "Update Question" : "Add Question"}
                                 </button>
@@ -974,6 +1130,51 @@ function AdminQuestions() {
                                     </div>
                                     <div className="row">
                                         <div className="col-md-6 mb-3">
+                                            <label className="form-label fw-semibold">Total Marks</label>
+                                            <select
+                                                className="form-select"
+                                                name="totalMarks"
+                                                value={testForm.totalMarks}
+                                                onChange={handleTestChange}
+                                                required
+                                            >
+                                                <option value={20}>20 Marks</option>
+                                                <option value={50}>50 Marks</option>
+                                                <option value={100}>100 Marks</option>
+                                            </select>
+                                        </div>
+                                        <div className="col-md-6 mb-3">
+                                            <label className="form-label fw-semibold">Marks Per Question</label>
+                                            <select
+                                                className="form-select"
+                                                name="marksPerQuestion"
+                                                value={testForm.marksPerQuestion}
+                                                onChange={handleTestChange}
+                                                required
+                                            >
+                                                <option value={1}>1 Mark</option>
+                                                <option value={2}>2 Marks</option>
+                                                <option value={4}>4 Marks</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="alert alert-info">
+                                        <div className="row">
+                                            <div className="col-md-4">
+                                                <strong>Max Questions:</strong> {testStats.maxQuestions}
+                                            </div>
+                                            <div className="col-md-4">
+                                                <strong>Duration:</strong> {testStats.duration} minutes
+                                            </div>
+                                            <div className="col-md-4">
+                                                <strong>Formula:</strong> {testForm.totalMarks} ÷ {testForm.marksPerQuestion} = {testStats.maxQuestions} questions
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="row">
+                                        <div className="col-md-12 mb-3">
                                             <label className="form-label fw-semibold">Duration (minutes)</label>
                                             <input
                                                 type="number"
@@ -982,18 +1183,9 @@ function AdminQuestions() {
                                                 value={testForm.durationMinutes}
                                                 onChange={handleTestChange}
                                                 required
+                                                readOnly
                                             />
-                                        </div>
-                                        <div className="col-md-6 mb-3">
-                                            <label className="form-label fw-semibold">Total Marks</label>
-                                            <input
-                                                type="number"
-                                                className="form-control"
-                                                name="totalMarks"
-                                                value={testForm.totalMarks}
-                                                onChange={handleTestChange}
-                                                required
-                                            />
+                                            <small className="text-muted">Auto-calculated based on question count (1 min per question, minimum 20 minutes)</small>
                                         </div>
                                     </div>
                                     <div className="d-flex gap-2 justify-content-end">
