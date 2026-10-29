@@ -207,6 +207,14 @@ function AdminQuestions() {
 
         // Get the test's marks per question if adding to a test
         const test = tests.find((t) => t.id === selectedTest);
+
+        // Validation: For 50-mark tests, force 1 mark per question (to avoid fractions like 12.5)
+        // For 20-mark and 100-mark tests, 4 marks per question is allowed
+        if (test && test.totalMarks === 50 && form.marks !== 1) {
+            alert("For 50-mark tests, each question must be worth 1 mark to avoid fractional marks. The marks have been automatically set to 1.");
+            form.marks = 1;
+        }
+
         const defaultMarks = test?.marksPerQuestion || 1;
 
         const questionData = {
@@ -252,6 +260,19 @@ function AdminQuestions() {
 
         if (!testForm.title.trim() || !testForm.deadline) {
             alert("Please fill in all required fields.");
+            return;
+        }
+
+        // Validation: For 50-mark tests, marks per question must be 1 (to avoid fractions)
+        // For 20-mark and 100-mark tests, 4 marks per question is allowed
+        if (testForm.totalMarks === 50 && testForm.marksPerQuestion !== 1) {
+            alert("For 50-mark tests, marks per question must be 1 to avoid fractional marks. This has been automatically set.");
+            testForm.marksPerQuestion = 1;
+        }
+
+        // Validation: Ensure duration is reasonable
+        if (testForm.durationMinutes < 1) {
+            alert("Duration must be at least 1 minute.");
             return;
         }
 
@@ -1183,9 +1204,9 @@ function AdminQuestions() {
                                                 value={testForm.durationMinutes}
                                                 onChange={handleTestChange}
                                                 required
-                                                readOnly
+                                                min="1"
                                             />
-                                            <small className="text-muted">Auto-calculated based on question count (1 min per question, minimum 20 minutes)</small>
+                                            <small className="text-muted">Manually configure test duration. For 50-mark tests, 60 minutes is recommended.</small>
                                         </div>
                                     </div>
                                     <div className="d-flex gap-2 justify-content-end">

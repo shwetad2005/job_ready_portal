@@ -22,6 +22,7 @@ function PublishedCategoryTest({ category }) {
     const [answers, setAnswers] = useState({});
     const [currentIndex, setCurrentIndex] = useState(0);
     const [timeLeft, setTimeLeft] = useState(0);
+    const [startTime, setStartTime] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isStarting, setIsStarting] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
@@ -59,6 +60,11 @@ function PublishedCategoryTest({ category }) {
     const startTest = async (test) => {
         setIsStarting(true);
         setErrorMessage("");
+        // LocalDateTime on the API expects an ISO value without a timezone suffix.
+        const startedAt = new Date();
+        const localStartTime = new Date(
+            startedAt.getTime() - startedAt.getTimezoneOffset() * 60_000
+        ).toISOString().slice(0, 19);
 
         try {
             const response = await api.get(`/questions/test/${test.id}`);
@@ -84,6 +90,7 @@ function PublishedCategoryTest({ category }) {
             setAnswers({});
             setCurrentIndex(0);
             setTimeLeft((test.durationMinutes || 60) * 60);
+            setStartTime(localStartTime);
         } catch (error) {
             console.error("Unable to load test questions:", error);
             setErrorMessage("Unable to load this test. Please try again.");
@@ -103,6 +110,7 @@ function PublishedCategoryTest({ category }) {
         try {
             const response = await api.post("/attempts", {
                 testId: selectedTest.id,
+                startTime,
                 answers: questions.map((question, index) => ({
                     questionId: question.id,
                     selectedAnswer: answers[index] || "",
@@ -122,9 +130,27 @@ function PublishedCategoryTest({ category }) {
         } catch (error) {
             console.error("Unable to submit test result:", error);
             submittedRef.current = false;
-            setErrorMessage("Unable to save your result. Please try submitting again.");
+
+            // Show detailed error message
+            let errorMsg = "Unable to save your result. ";
+            if (error.response) {
+                if (error.response.status === 401) {
+                    errorMsg += "Please login to submit your test.";
+                } else if (error.response.status === 409) {
+                    errorMsg += "You have already submitted this test.";
+                } else if (error.response.status === 404) {
+                    errorMsg += "Test not found or not published.";
+                } else {
+                    errorMsg += error.response.data?.message || "Please try submitting again.";
+                }
+            } else if (error.message) {
+                errorMsg += error.message;
+            } else {
+                errorMsg += "Please try submitting again.";
+            }
+            setErrorMessage(errorMsg);
         }
-    }, [answers, details.label, navigate, questions, selectedTest]);
+    }, [answers, details.label, navigate, questions, selectedTest, startTime]);
 
     useEffect(() => {
         if (!selectedTest || submittedRef.current) {

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.study.backend.dtos.AttemptAnswerResponseDto;
@@ -24,6 +25,7 @@ import com.study.backend.entities.Question;
 import com.study.backend.entities.StudentAnswer;
 import com.study.backend.entities.Test;
 import com.study.backend.entities.TestAttempt;
+import com.study.backend.entities.TestCategory;
 import com.study.backend.entities.User;
 import com.study.backend.repositories.QuestionRepository;
 import com.study.backend.repositories.TestAttemptRepository;
@@ -67,6 +69,12 @@ public class TestAttemptController {
                 || !Boolean.TRUE.equals(test.getIsActive())) {
 
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        // Prevent duplicate submissions for the same test
+        if (attemptRepository.existsByUser_IdAndTest_Id(user.getId(), test.getId())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(null);
         }
 
         // Convert submitted answers into a map
@@ -232,6 +240,145 @@ public class TestAttemptController {
                         .toList();
 
         return ResponseEntity.ok(leaderboard);
+    }
+
+    // Get leaderboard by category
+    @GetMapping("/leaderboard/category")
+    public ResponseEntity<List<TestAttemptResponseDto>> getLeaderboardByCategory(
+            @RequestParam String category) {
+
+        try {
+            TestCategory testCategory = TestCategory.valueOf(category.toUpperCase());
+            List<TestAttemptResponseDto> leaderboard =
+                    attemptRepository.findAll()
+                            .stream()
+                            .filter(attempt -> attempt.getTest().getCategory() == testCategory)
+                            .map(attempt -> toResponse(attempt, false))
+                            .sorted((a, b) -> {
+
+                                // Primary: highest percentage first
+                                int scoreCompare = Integer.compare(
+                                        b.getPercentage(),
+                                        a.getPercentage());
+
+                                if (scoreCompare != 0) {
+                                    return scoreCompare;
+                                }
+
+                                // Secondary: less time taken first
+                                int timeCompare = Integer.compare(
+                                        a.getTimeTakenSeconds(),
+                                        b.getTimeTakenSeconds());
+
+                                if (timeCompare != 0) {
+                                    return timeCompare;
+                                }
+
+                                // Tertiary: earlier submission first
+                                if (a.getAttemptedAt() == null) {
+                                    return b.getAttemptedAt() == null
+                                            ? 0 : 1;
+                                }
+
+                                if (b.getAttemptedAt() == null) {
+                                    return -1;
+                                }
+
+                                return a.getAttemptedAt()
+                                        .compareTo(b.getAttemptedAt());
+                            })
+                            .toList();
+
+            return ResponseEntity.ok(leaderboard);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    // Get user's rank in category leaderboard
+    @GetMapping("/leaderboard/category/rank")
+    public ResponseEntity<?> getUserRankInCategory(
+            @RequestParam String category,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            TestCategory testCategory = TestCategory.valueOf(category.toUpperCase());
+            List<TestAttemptResponseDto> leaderboard =
+                    attemptRepository.findAll()
+                            .stream()
+                            .filter(attempt -> attempt.getTest().getCategory() == testCategory)
+                            .map(attempt -> toResponse(attempt, false))
+                            .sorted((a, b) -> {
+
+                                // Primary: highest percentage first
+                                int scoreCompare = Integer.compare(
+                                        b.getPercentage(),
+                                        a.getPercentage());
+
+                                if (scoreCompare != 0) {
+                                    return scoreCompare;
+                                }
+
+                                // Secondary: less time taken first
+                                int timeCompare = Integer.compare(
+                                        a.getTimeTakenSeconds(),
+                                        b.getTimeTakenSeconds());
+
+                                if (timeCompare != 0) {
+                                    return timeCompare;
+                                }
+
+                                // Tertiary: earlier submission first
+                                if (a.getAttemptedAt() == null) {
+                                    return b.getAttemptedAt() == null
+                                            ? 0 : 1;
+                                }
+
+                                if (b.getAttemptedAt() == null) {
+                                    return -1;
+                                }
+
+                                return a.getAttemptedAt()
+                                        .compareTo(b.getAttemptedAt());
+                            })
+                            .toList();
+
+            // Find user's best attempt in this category
+            var userAttempts = leaderboard.stream()
+                    .filter(attempt -> attempt.getEmail().equals(user.getEmail()))
+                    .toList();
+
+            if (userAttempts.isEmpty()) {
+                return ResponseEntity.ok(Map.of(
+                        "rank", null,
+                        "score", 0,
+                        "total", 0,
+                        "percentage", 0,
+                        "message", "No attempts in this category"
+                ));
+            }
+
+            // Get the best attempt (highest percentage)
+            var bestAttempt = userAttempts.stream()
+                    .max((a, b) -> Integer.compare(a.getPercentage(), b.getPercentage()))
+                    .orElse(userAttempts.get(0));
+
+            int rank = leaderboard.indexOf(bestAttempt) + 1;
+
+            return ResponseEntity.ok(Map.of(
+                    "rank", rank,
+                    "score", bestAttempt.getScore(),
+                    "total", bestAttempt.getTotal(),
+                    "percentage", bestAttempt.getPercentage(),
+                    "testName", bestAttempt.getTestName()
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
     }
 
     // Convert entity into response DTO

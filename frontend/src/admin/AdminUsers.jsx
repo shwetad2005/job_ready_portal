@@ -31,27 +31,21 @@ function AdminUsers() {
             const response = await api.get("/users/students");
 
             // Transform backend data to match frontend structure
-            const studentData = response.data.map((student) => ({
+            setUsers(response.data.map((student) => ({
                 id: student.id,
                 name: student.fullName,
                 email: student.email,
-                attempts: student.attempts ? student.attempts.length : 0,
-                bestScore: calculateBestScore(student.attempts),
-            }));
-
-            setUsers(studentData);
+                attempts: student.attempts,
+                bestScore: student.bestScore,
+            })));
         } catch (err) {
-            setError(err.message);
+            setError(err.response?.status === 403
+                ? "You must be signed in as an admin to view students."
+                : err.response?.data?.message || err.message || "Unable to load students.");
             console.error("Error loading students:", err);
         } finally {
             setLoading(false);
         }
-    };
-
-    // Calculate best score from attempts
-    const calculateBestScore = (attempts) => {
-        if (!attempts || attempts.length === 0) return 0;
-        return Math.max(...attempts.map((attempt) => attempt.score || 0));
     };
 
     // Handle form input changes
@@ -140,7 +134,7 @@ function AdminUsers() {
                 "Student deleted successfully."
             );
         } catch (err) {
-            alert("Error deleting student: " + err.message);
+            alert("Error deleting student: " + (err.response?.data?.message || err.message));
             console.error("Error deleting student:", err);
         }
     };

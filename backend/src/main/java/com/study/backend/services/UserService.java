@@ -8,6 +8,7 @@ import com.study.backend.dtos.UserRequestDto;
 import com.study.backend.dtos.UpdateUserRequestDto;
 import com.study.backend.dtos.UserResponseDto;
 import com.study.backend.entities.User;
+import com.study.backend.dtos.AdminStudentResponseDto;
 
 // Defines the methods that the UserService implementation must provide
 public interface UserService {
@@ -18,9 +19,11 @@ public interface UserService {
     UserResponseDto register(UserRequestDto userRequestDto);
 
     // Gets all users with ROLE_STUDENT
-    List<User> getAllStudents();
+    List<AdminStudentResponseDto> getAllStudents();
 
     // Updates an existing student
     UserResponseDto updateStudent(String id, UpdateUserRequestDto userRequestDto);
+
+    boolean deleteStudent(String id);
 
 }

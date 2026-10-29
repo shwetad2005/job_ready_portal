@@ -34,9 +34,12 @@ public class QuestionServiceImpl implements QuestionService {
             int totalMarks = questionRepository.sumMarksByTestId(test.getId());
             test.setTotalMarks(totalMarks);
 
-            // Auto-calculate duration based on total marks (60 minutes for 50-mark tests, otherwise 1 min per question minimum)
+            // Only auto-calculate duration if it wasn't manually set (default is 60 for 50-mark tests)
+            // If duration is already set and different from the auto-calculated value, keep it
             int suggestedDuration = totalMarks == 50 ? 60 : Math.max((int) count, 30);
-            test.setDurationMinutes(suggestedDuration);
+            if (test.getDurationMinutes() == null || test.getDurationMinutes() <= 0) {
+                test.setDurationMinutes(suggestedDuration);
+            }
 
             testRepository.save(test);
         }
@@ -147,7 +150,14 @@ public class QuestionServiceImpl implements QuestionService {
         copy.setOptionD(source.getOptionD());
         copy.setCorrectAnswer(source.getCorrectAnswer());
         copy.setExplanation(source.getExplanation());
-        copy.setMarks(source.getMarks());
+
+        // For 50-mark tests, force 1 mark per question
+        if (targetTest.getTotalMarks() != null && targetTest.getTotalMarks() == 50) {
+            copy.setMarks(1);
+        } else {
+            copy.setMarks(source.getMarks());
+        }
+
         copy.setTest(targetTest);
         return copy;
     }
@@ -198,8 +208,9 @@ public class QuestionServiceImpl implements QuestionService {
                             : question.getCategory());
             existingQuestion.setMarks(question.getMarks());
         } else {
-            // Keep existing test, check if it's a 50-mark test
-            if (oldTest != null && oldTest.getTotalMarks() != null && oldTest.getTotalMarks() == 50) {
+            // Keep existing test but update marks if test is 50-mark
+            if (existingQuestion.getTest() != null && existingQuestion.getTest().getTotalMarks() != null
+                    && existingQuestion.getTest().getTotalMarks() == 50) {
                 existingQuestion.setMarks(1);
             } else {
                 existingQuestion.setMarks(question.getMarks());
@@ -208,8 +219,16 @@ public class QuestionServiceImpl implements QuestionService {
 
         Question saved = questionRepository.save(existingQuestion);
         // Update counts for both old and new test if changed
-        if (oldTest != null && !oldTest.getId().equals(existingQuestion.getTest()?.getId())) {
+        if (oldTest != null &&
+                !java.util.Objects.equals(
+                        oldTest.getId(),
+                        existingQuestion.getTest() != null
+                                ? existingQuestion.getTest().getId()
+                                : null
+                )) {
+
             updateTestQuestionCount(oldTest);
+        
         }
         updateTestQuestionCount(existingQuestion.getTest());
         return saved;

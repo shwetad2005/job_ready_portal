@@ -14,4 +14,5 @@ public interface SupportTicketRepository extends JpaRepository<SupportTicket, St
 
     @EntityGraph(attributePaths = {"user", "test"})
     List<SupportTicket> findAllByOrderByCreatedAtDesc();
+    void deleteAllByUser_Id(String userId);
 }

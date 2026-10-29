@@ -55,9 +55,8 @@ public class TestServiceImpl implements TestService {
         int totalMarks = questionRepository.sumMarksByTestId(id);
         test.setTotalMarks(totalMarks);
 
-        // Update duration based on total marks (60 minutes for 50-mark tests, otherwise 1 min per question minimum)
-        int suggestedDuration = totalMarks == 50 ? 60 : Math.max((int) count, 30);
-        test.setDurationMinutes(suggestedDuration);
+        // Don't auto-update duration - preserve manually configured value
+        // Duration is only set during test creation or manual update
 
         return test;
     }
@@ -65,14 +64,13 @@ public class TestServiceImpl implements TestService {
     @Override
     public List<Test> getAllTests() {
         List<Test> tests = testRepository.findByOrderByCreatedAtDesc();
-        // Update question counts, total marks, and duration for all tests
+        // Update question counts and total marks for all tests
         tests.forEach(test -> {
             long count = questionRepository.countByTestId(test.getId());
             test.setQuestionCount((int) count);
             int totalMarks = questionRepository.sumMarksByTestId(test.getId());
             test.setTotalMarks(totalMarks);
-            int suggestedDuration = totalMarks == 50 ? 60 : Math.max((int) count, 30);
-            test.setDurationMinutes(suggestedDuration);
+            // Don't auto-update duration - preserve manually configured value
         });
         return tests;
     }
@@ -85,8 +83,7 @@ public class TestServiceImpl implements TestService {
             test.setQuestionCount((int) count);
             int totalMarks = questionRepository.sumMarksByTestId(test.getId());
             test.setTotalMarks(totalMarks);
-            int suggestedDuration = totalMarks == 50 ? 60 : Math.max((int) count, 30);
-            test.setDurationMinutes(suggestedDuration);
+            // Don't auto-update duration - preserve manually configured value
         });
         return tests;
     }
@@ -99,8 +96,7 @@ public class TestServiceImpl implements TestService {
             test.setQuestionCount((int) count);
             int totalMarks = questionRepository.sumMarksByTestId(test.getId());
             test.setTotalMarks(totalMarks);
-            int suggestedDuration = totalMarks == 50 ? 60 : Math.max((int) count, 30);
-            test.setDurationMinutes(suggestedDuration);
+            // Don't auto-update duration - preserve manually configured value
         });
         return tests;
     }
@@ -114,8 +110,7 @@ public class TestServiceImpl implements TestService {
             test.setQuestionCount((int) count);
             int totalMarks = questionRepository.sumMarksByTestId(test.getId());
             test.setTotalMarks(totalMarks);
-            int suggestedDuration = totalMarks == 50 ? 60 : Math.max((int) count, 30);
-            test.setDurationMinutes(suggestedDuration);
+            // Don't auto-update duration - preserve manually configured value
         });
         return tests;
     }
@@ -137,13 +132,18 @@ public class TestServiceImpl implements TestService {
             existingTest.setCategory(test.getCategory());
         }
         existingTest.setDeadline(test.getDeadline());
-        
+
+        // Respect manually configured duration if provided
+        if (test.getDurationMinutes() != null && test.getDurationMinutes() > 0) {
+            existingTest.setDurationMinutes(test.getDurationMinutes());
+        }
+
         // Only update marksPerQuestion if test is not published
         if (!Boolean.TRUE.equals(existingTest.getIsPublished()) && test.getMarksPerQuestion() != null) {
             existingTest.setMarksPerQuestion(test.getMarksPerQuestion());
         }
-        
-        // Duration and total marks are auto-calculated from questions, not from form input
+
+        // Total marks are auto-calculated from questions, not from form input
         existingTest.setIsActive(test.getIsActive());
         existingTest.setIsPublished(
                 Boolean.TRUE.equals(existingTest.getIsPublished())

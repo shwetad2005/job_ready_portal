@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 import com.study.backend.entities.User;
@@ -16,6 +17,7 @@ public interface UserRepository extends JpaRepository<User, String>{
 
     Optional<User> findByEmailIgnoreCase(String email);
 
+    @EntityGraph(attributePaths = "attempts")
     List<User> findByRole(Role role);
 
 }

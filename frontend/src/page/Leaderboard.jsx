@@ -1,58 +1,109 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../api";
 
 function Leaderboard() {
     const navigate = useNavigate();
 
     const [leaderboard, setLeaderboard] = useState([]);
     const [currentUser, setCurrentUser] = useState(null);
+    const [selectedCategory, setSelectedCategory] = useState("ALL");
+    const [userRank, setUserRank] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const categories = [
+        { value: "ALL", label: "All Categories" },
+        { value: "APTITUDE", label: "Aptitude" },
+        { value: "CODING", label: "Coding" },
+        { value: "INTERVIEW_PREPARATION", label: "Interview Preparation" },
+    ];
 
     useEffect(() => {
         const user = JSON.parse(
             localStorage.getItem("user") || "null"
         );
-
         setCurrentUser(user);
+        fetchLeaderboard(selectedCategory, user);
+    }, [selectedCategory]);
 
-        const scores = JSON.parse(
-            localStorage.getItem("weeklyScores") || "[]"
-        );
+    const fetchLeaderboard = async (category, user) => {
+        setIsLoading(true);
+        try {
+            let endpoint = "/attempts/leaderboard";
+            if (category !== "ALL") {
+                endpoint = `/attempts/leaderboard/category?category=${category}`;
+            }
 
-        // Calculate percentage safely and rank highest percentage first
-        const sortedResults = scores
-            .map((student) => {
-                const total = Number(student.total) || 0;
-                const score = Number(student.score) || 0;
+            const response = await api.get(endpoint);
+            setLeaderboard(response.data);
 
-                const percentage =
-                    student.percentage !== undefined &&
-                    student.percentage !== null &&
-                    student.percentage !== ""
-                        ? Number(student.percentage)
-                        : total > 0
-                            ? Math.round((score / total) * 100)
-                            : 0;
-
-                return {
-                    ...student,
-                    score,
-                    total,
-                    percentage,
-                    name:
-                        student.name ||
-                        student.fullName ||
-                        "Unknown Student",
-                };
-            })
-            .sort(
-                (a, b) =>
-                    b.percentage - a.percentage ||
-                    b.score - a.score
+            // Fetch user's rank if logged in
+            if (user && category !== "ALL") {
+                try {
+                    const rankResponse = await api.get(
+                        `/attempts/leaderboard/category/rank?category=${category}`
+                    );
+                    setUserRank(rankResponse.data);
+                } catch (error) {
+                    console.error("Failed to fetch user rank:", error);
+                    setUserRank(null);
+                }
+            } else {
+                setUserRank(null);
+            }
+        } catch (error) {
+            console.error("Failed to fetch leaderboard:", error);
+            // Fallback to localStorage
+            const scores = JSON.parse(
+                localStorage.getItem("weeklyScores") || "[]"
             );
 
-        setLeaderboard(sortedResults);
-    }, []);
+            const sortedResults = scores
+                .map((student) => {
+                    const total = Number(student.total) || 0;
+                    const score = Number(student.score) || 0;
+
+                    const percentage =
+                        student.percentage !== undefined &&
+                        student.percentage !== null &&
+                        student.percentage !== ""
+                            ? Number(student.percentage)
+                            : total > 0
+                                ? Math.round((score / total) * 100)
+                                : 0;
+
+                    return {
+                        ...student,
+                        score,
+                        total,
+                        percentage,
+                        name:
+                            student.name ||
+                            student.fullName ||
+                            "Unknown Student",
+                    };
+                })
+                .sort(
+                    (a, b) =>
+                        b.percentage - a.percentage ||
+                        b.score - a.score
+                );
+
+            setLeaderboard(sortedResults);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="container mt-5 text-center">
+                <div className="spinner-border text-primary" role="status" />
+                <p className="mt-3">Loading leaderboard...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="container mt-5 mb-5">
@@ -62,6 +113,54 @@ function Leaderboard() {
                     Check your ranking and compare your performance.
                 </p>
             </div>
+
+            {/* Category Filter */}
+            <div className="card shadow-sm mb-4">
+                <div className="card-body p-3">
+                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <div className="btn-group" role="group">
+                            {categories.map((cat) => (
+                                <button
+                                    key={cat.value}
+                                    className={`btn ${
+                                        selectedCategory === cat.value
+                                            ? "btn-primary"
+                                            : "btn-outline-primary"
+                                    }`}
+                                    onClick={() => setSelectedCategory(cat.value)}
+                                >
+                                    {cat.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* User's Rank Card */}
+            {userRank && userRank.rank !== null && (
+                <div className="card shadow-sm mb-4 border-primary">
+                    <div className="card-body p-4">
+                        <div className="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 className="fw-bold mb-1">Your Rank</h5>
+                                <p className="text-secondary mb-0">
+                                    Best score in {selectedCategory}
+                                </p>
+                            </div>
+                            <div className="text-end">
+                                <h2 className="fw-bold text-primary mb-0">
+                                    #{userRank.rank}
+                                </h2>
+                                <p className="mb-0">
+                                    {userRank.score} / {userRank.total} (
+                                    {userRank.percentage}%)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Top 3 students */}
             {leaderboard.length > 0 && (
@@ -75,7 +174,7 @@ function Leaderboard() {
                                     </div>
 
                                     <h4 className="fw-bold mt-3">
-                                        {student.name}
+                                        {student.name || student.fullName || student.email || "Student"}
                                     </h4>
 
                                     <p className="mb-1">
@@ -87,6 +186,9 @@ function Leaderboard() {
 
                                     <p className="text-success fw-bold">
                                         {student.percentage}%
+                                    </p>
+                                    <p className="small text-muted mb-0">
+                                        {student.testName}
                                     </p>
                                 </div>
                             </div>
@@ -148,7 +250,7 @@ function Leaderboard() {
                                                 </td>
 
                                                 <td>
-                                                    {student.name}
+                                                    {student.name || student.fullName || student.email || "Student"}
                                                     {isCurrentUser && (
                                                         <span className="badge bg-primary ms-2">
                                                             You

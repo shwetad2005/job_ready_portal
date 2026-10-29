@@ -144,6 +144,15 @@ function AdminDashboard() {
             path: "/admin/questions",
         },
         {
+            title: "Manage Courses",
+            description: "Create courses and set their descriptions and prices for students.",
+            icon: "📚",
+            iconBg: "#eff6ff",
+            button: "Manage Courses →",
+            buttonClass: "btn-primary",
+            path: "/admin/courses",
+        },
+        {
             title: "Test Results",
             description:
                 "Monitor student scores and test performance.",

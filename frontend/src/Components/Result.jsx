@@ -10,15 +10,15 @@ function Result() {
     const navigate = useNavigate();
 
     // Score
-    const score = location.state.score;
+    const score = location.state?.score || 0;
 
-    // Total Questions
-    const total = location.state.total;
-    const testName = location.state.testName;
-    const category = location.state.category;
+    // Total Marks
+    const total = location.state?.total || 0;
+    const testName = location.state?.testName;
+    const category = location.state?.category;
 
     // Percentage
-    const percentage = ((score / total) * 100).toFixed(2);
+    const percentage = total > 0 ? ((score / total) * 100).toFixed(2) : "0.00";
 
     return (
 
@@ -42,12 +42,20 @@ function Result() {
                     Percentage : {percentage}%
                 </h4>
 
-                <button
-                    className="btn btn-primary mt-4"
-                    onClick={() => navigate("/dashboard")}
-                >
-                    Back To Dashboard
-                </button>
+                <div className="mt-4 d-flex justify-content-center gap-3">
+                    <button
+                        className="btn btn-primary"
+                        onClick={() => navigate("/dashboard")}
+                    >
+                        Back To Dashboard
+                    </button>
+                    <button
+                        className="btn btn-success"
+                        onClick={() => navigate("/leaderboard")}
+                    >
+                        View Leaderboard
+                    </button>
+                </div>
 
             </div>
 

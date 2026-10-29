@@ -32,6 +32,9 @@ import AdminWeeklyTest from "./admin/AdminWeeklyTest";
 import AdminResults from "./admin/AdminResults";
 import AdminSupportTickets from "./admin/AdminSupportTickets";
 import StudentResults from "./page/StudentResults";
+import Courses from "./page/Courses";
+import MyCourses from "./page/MyCourses";
+import AdminCourses from "./admin/AdminCourses";
 
 import ProtectedRoute from "./Components/ProtectedRoute";
 
@@ -59,6 +62,12 @@ function App() {
                 <Route
                     path="/register"
                     element={<Register />}
+                />
+
+                <Route path="/courses" element={<Courses />} />
+                <Route
+                    path="/my-courses"
+                    element={<ProtectedRoute><MyCourses /></ProtectedRoute>}
                 />
 
 
@@ -217,6 +226,11 @@ function App() {
                             <AdminQuestions />
                         </AdminProtectedRoute>
                     }
+                />
+
+                <Route
+                    path="/admin/courses"
+                    element={<AdminProtectedRoute><AdminCourses /></AdminProtectedRoute>}
                 />
 <Route
     path="/admin/weekly-test"

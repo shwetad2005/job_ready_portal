@@ -66,10 +66,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.study.backend.dtos.UpdateUserRequestDto;
+import com.study.backend.dtos.AdminStudentResponseDto;
 import com.study.backend.dtos.UserRequestDto;
 import com.study.backend.dtos.UserResponseDto;
 import com.study.backend.entities.User;
-import com.study.backend.repositories.UserRepository;
 import com.study.backend.services.UserService;
 
 import jakarta.validation.Valid;
@@ -85,9 +85,6 @@ public class UserController {
     // Injects the UserService object automatically
     @Autowired
     private UserService userService;
-
-    @Autowired
-    private UserRepository userRepository;
 
     // Handles POST requests to register a new user
     @PostMapping
@@ -106,8 +103,8 @@ public class UserController {
 
     // Get all students (users with ROLE_STUDENT)
     @GetMapping("/students")
-    public ResponseEntity<List<User>> getAllStudents() {
-        List<User> students = userService.getAllStudents();
+    public ResponseEntity<List<AdminStudentResponseDto>> getAllStudents() {
+        List<AdminStudentResponseDto> students = userService.getAllStudents();
         return ResponseEntity.ok(students);
     }
 
@@ -123,8 +120,9 @@ public class UserController {
     // Delete a user by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable String id) {
-        userRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        return userService.deleteStudent(id)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 }
 

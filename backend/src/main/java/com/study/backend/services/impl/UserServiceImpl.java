@@ -6,6 +6,7 @@ import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.study.backend.dtos.UserRequestDto;
@@ -13,7 +14,11 @@ import com.study.backend.dtos.UpdateUserRequestDto;
 import com.study.backend.dtos.UserResponseDto;
 import com.study.backend.entities.User;
 import com.study.backend.entities.Role;
+import com.study.backend.dtos.AdminStudentResponseDto;
 import com.study.backend.repositories.UserRepository;
+import com.study.backend.repositories.TestAttemptRepository;
+import com.study.backend.repositories.SupportTicketRepository;
+import com.study.backend.repositories.CoursePurchaseRepository;
 import com.study.backend.services.UserService;
 
 @Service
@@ -21,6 +26,15 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private TestAttemptRepository testAttemptRepository;
+
+    @Autowired
+    private SupportTicketRepository supportTicketRepository;
+
+    @Autowired
+    private CoursePurchaseRepository coursePurchaseRepository;
 
     // Injects the password encoder from SecurityConfig
     @Autowired
@@ -56,8 +70,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<User> getAllStudents() {
-        return userRepository.findByRole(Role.ROLE_STUDENT);
+    public List<AdminStudentResponseDto> getAllStudents() {
+        return userRepository.findByRole(Role.ROLE_STUDENT).stream()
+                .map(user -> new AdminStudentResponseDto(
+                        user.getId(),
+                        user.getFullName(),
+                        user.getEmail(),
+                        user.getAttempts().size(),
+                        user.getAttempts().stream()
+                                .mapToInt(attempt -> attempt.getScore() == null ? 0 : attempt.getScore())
+                                .max()
+                                .orElse(0)))
+                .toList();
     }
 
     @Override
@@ -81,5 +105,20 @@ public class UserServiceImpl implements UserService {
         response.setRole(savedUser.getRole().name());
 
         return response;
+    }
+
+    @Override
+    @Transactional
+    public boolean deleteStudent(String id) {
+        User student = userRepository.findById(id).orElse(null);
+        if (student == null || student.getRole() != Role.ROLE_STUDENT) {
+            return false;
+        }
+
+        coursePurchaseRepository.deleteAllByUser_Id(id);
+        supportTicketRepository.deleteAllByUser_Id(id);
+        testAttemptRepository.deleteAll(testAttemptRepository.findByUser_Id(id));
+        userRepository.delete(student);
+        return true;
     }
 }

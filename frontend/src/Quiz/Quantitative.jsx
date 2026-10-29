@@ -283,9 +283,10 @@ setQuizQuestions(aptitudeAdminQuestions);
 
 
         // =========================================
-        // GET EXISTING RESULTS
+        // SAVE TO LOCALSTORAGE (Practice Mode)
         // =========================================
 
+        // GET EXISTING RESULTS
         const existingScores =
             JSON.parse(
                 localStorage.getItem(
@@ -294,10 +295,7 @@ setQuizQuestions(aptitudeAdminQuestions);
             ) || [];
 
 
-        // =========================================
         // CREATE NEW RESULT
-        // =========================================
-
         const newResult = {
 
             id: Date.now(),
@@ -312,7 +310,7 @@ setQuizQuestions(aptitudeAdminQuestions);
             // Test information
             category: "Aptitude",
 
-            testName: "Aptitude Test",
+            testName: "Aptitude Practice Test",
 
             score: totalScore,
 
@@ -326,10 +324,7 @@ setQuizQuestions(aptitudeAdminQuestions);
         };
 
 
-        // =========================================
         // SAVE RESULT
-        // =========================================
-
         localStorage.setItem(
             "weeklyScores",
             JSON.stringify([
@@ -338,11 +333,7 @@ setQuizQuestions(aptitudeAdminQuestions);
             ])
         );
 
-
-        // =========================================
-        // GO TO RESULT PAGE
-        // =========================================
-
+        // Navigate to result page
         navigate(
             "/result",
             {
