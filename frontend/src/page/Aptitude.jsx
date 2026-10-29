@@ -7,20 +7,9 @@ function Aptitude() {
     const navigate = useNavigate();
 
 
-    // Start Practice Button
+    // Start the learning path for aptitude
     const handleStartPractice = () => {
-
-        const isLoggedIn = sessionStorage.getItem("isLoggedIn") === "true";
-
-        if (isLoggedIn) {
-            navigate("/quantitative");
-        } else {
-            navigate("/login", {
-                state: {
-                    redirectTo: "/quantitative"
-                }
-            });
-        }
+        navigate("/courses?category=APTITUDE");
     };
 
 
@@ -166,7 +155,7 @@ function Aptitude() {
                 </h3>
 
                 <p className="mt-2">
-                    Login or register to start your aptitude practice.
+                    Explore an aptitude course, study its lessons, then unlock its tests.
                 </p>
 
                 {/* Start Practice Button */}
@@ -174,7 +163,7 @@ function Aptitude() {
                     className="btn btn-primary btn-lg mt-2"
                     onClick={handleStartPractice}
                 >
-                    Start Practice
+                    Browse Aptitude Learning
                 </button>
 
             </div>

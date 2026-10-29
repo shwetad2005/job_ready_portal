@@ -16,6 +16,8 @@ public class SupportTicketResponseDto {
     private final String category;
     private final String subject;
     private final String description;
+    private final String adminReply;
+    private final LocalDateTime adminReplyAt;
     private final String status;
     private final LocalDateTime createdAt;
 
@@ -27,6 +29,8 @@ public class SupportTicketResponseDto {
         this.category = ticket.getCategory().name();
         this.subject = ticket.getSubject();
         this.description = ticket.getDescription();
+        this.adminReply = ticket.getAdminReply();
+        this.adminReplyAt = ticket.getAdminReplyAt();
         this.status = ticket.getStatus().name();
         this.createdAt = ticket.getCreatedAt();
     }

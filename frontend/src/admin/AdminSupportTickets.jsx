@@ -8,6 +8,8 @@ function AdminSupportTickets() {
     const [tickets, setTickets] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
+    const [replyDrafts, setReplyDrafts] = useState({});
+    const [savingReplyId, setSavingReplyId] = useState(null);
 
     useEffect(() => {
         api.get("/tickets")
@@ -32,6 +34,32 @@ function AdminSupportTickets() {
         }
     };
 
+    const sendReplyAndResolve = async (ticket) => {
+        const adminReply = (replyDrafts[ticket.id] || "").trim();
+        if (!adminReply) {
+            setErrorMessage("Write a reply before resolving the ticket.");
+            return;
+        }
+        setErrorMessage("");
+        setSavingReplyId(ticket.id);
+        try {
+            const response = await api.patch(`/tickets/${ticket.id}/status`, {
+                status: "RESOLVED",
+                adminReply,
+            });
+            setTickets((previous) => previous.map((item) => item.id === ticket.id ? response.data : item));
+            setReplyDrafts((previous) => ({ ...previous, [ticket.id]: "" }));
+        } catch (error) {
+            console.error("Unable to send ticket reply:", error);
+            setErrorMessage(error.response?.data?.message
+                || (error.response
+                    ? `Unable to send the reply and resolve this ticket (server error ${error.response.status}).`
+                    : "Unable to connect to the server. Please try again."));
+        } finally {
+            setSavingReplyId(null);
+        }
+    };
+
     return (
         <main className="container py-5">
             <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
@@ -53,14 +81,15 @@ function AdminSupportTickets() {
                                 <th>Test</th>
                                 <th>Details</th>
                                 <th>Submitted</th>
+                                <th>Reply to student</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                <tr><td className="text-center py-5" colSpan="6">Loading tickets...</td></tr>
+                                <tr><td className="text-center py-5" colSpan="7">Loading tickets...</td></tr>
                             ) : tickets.length === 0 ? (
-                                <tr><td className="text-center py-5 text-secondary" colSpan="6">No exam support tickets have been submitted.</td></tr>
+                                <tr><td className="text-center py-5 text-secondary" colSpan="7">No exam support tickets have been submitted.</td></tr>
                             ) : tickets.map((ticket) => (
                                 <tr key={ticket.id}>
                                     <td>
@@ -76,6 +105,21 @@ function AdminSupportTickets() {
                                         {ticket.description}
                                     </td>
                                     <td>{new Date(ticket.createdAt).toLocaleString()}</td>
+                                    <td style={{ minWidth: "280px" }}>
+                                        {ticket.adminReply && <div className="small alert alert-success py-2">Sent reply: {ticket.adminReply}</div>}
+                                        <textarea
+                                            className="form-control form-control-sm mb-2"
+                                            rows="3"
+                                            maxLength="5000"
+                                            aria-label={`Reply to ${ticket.studentName} about ${ticket.subject}`}
+                                            placeholder="Write a solution or reply for this student..."
+                                            value={replyDrafts[ticket.id] || ""}
+                                            onChange={(event) => setReplyDrafts((previous) => ({ ...previous, [ticket.id]: event.target.value }))}
+                                        />
+                                        <button className="btn btn-sm btn-success" disabled={savingReplyId === ticket.id} onClick={() => sendReplyAndResolve(ticket)}>
+                                            {savingReplyId === ticket.id ? "Sending..." : "Send reply & resolve"}
+                                        </button>
+                                    </td>
                                     <td>
                                         <select
                                             className="form-select form-select-sm"
@@ -89,6 +133,16 @@ function AdminSupportTickets() {
                                                 </option>
                                             ))}
                                         </select>
+                                        {ticket.status !== "RESOLVED" ? (
+                                            <button
+                                                className="btn btn-sm btn-outline-success mt-2 w-100"
+                                                onClick={() => updateStatus(ticket.id, "RESOLVED")}
+                                            >
+                                                Close ticket
+                                            </button>
+                                        ) : (
+                                            <span className="small text-success d-block text-center mt-2">Ticket closed</span>
+                                        )}
                                     </td>
                                 </tr>
                             ))}

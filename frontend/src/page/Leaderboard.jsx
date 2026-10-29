@@ -96,6 +96,16 @@ function Leaderboard() {
         }
     };
 
+    const testWinners = [...leaderboard.reduce((winners, attempt) => {
+        const attemptNumber = attempt.attemptNumber || 1;
+        const winnerKey = `${attempt.testId}:${attemptNumber}`;
+        if (attempt.testId && !winners.has(winnerKey)) {
+            // The API ranks attempts by percentage, then time, then submission time.
+            winners.set(winnerKey, attempt);
+        }
+        return winners;
+    }, new Map()).values()];
+
     if (isLoading) {
         return (
             <div className="container mt-5 text-center">
@@ -162,6 +172,7 @@ function Leaderboard() {
                 </div>
             )}
 
+            {/* Best attempt for each individual test */}
             {/* Top 3 students */}
             {leaderboard.length > 0 && (
                 <div className="row justify-content-center mb-5">
@@ -188,7 +199,7 @@ function Leaderboard() {
                                         {student.percentage}%
                                     </p>
                                     <p className="small text-muted mb-0">
-                                        {student.testName}
+                                        Test {student.attemptNumber || 1}: {student.testName}
                                     </p>
                                 </div>
                             </div>
@@ -196,6 +207,38 @@ function Leaderboard() {
                     ))}
                 </div>
             )}
+
+            <section className="mb-5" aria-labelledby="test-winners-title">
+                <div className="mb-3">
+                    <h2 id="test-winners-title" className="h4 fw-bold">Top performance by test</h2>
+                    <p className="text-secondary mb-0">Each test attempt number has a winner: highest percentage, then fastest time, then earliest submission.</p>
+                </div>
+                <div className="row g-3">
+                    {categories.filter((category) => category.value !== "ALL").map((category) => {
+                        const categoryWinners = testWinners.filter((winner) => winner.category === category.value);
+                        return (
+                            <div className="col-12 col-md-4" key={category.value}>
+                                <section className="card h-100 border-0 shadow-sm" aria-label={`${category.label} test winners`}>
+                                    <div className="card-body">
+                                        <h3 className="h5 fw-bold border-bottom pb-2">{category.label}</h3>
+                                        <div style={{ maxHeight: "360px", overflowY: "auto" }}>
+                                            {categoryWinners.length === 0 ? (
+                                                <p className="small text-secondary mb-0">No test results yet.</p>
+                                            ) : categoryWinners.map((winner) => (
+                                                <article className="border-bottom py-3" key={`${winner.testId}-${winner.attemptNumber || 1}`}>
+                                                    <h4 className="h6 fw-bold">Test {winner.attemptNumber || 1}: {winner.testName || "Test"}</h4>
+                                                    <p className="small mb-1">Winner: <strong>{winner.name || winner.fullName || winner.email || "Student"}</strong></p>
+                                                    <p className="text-success fw-bold mb-0">{winner.score} / {winner.total} ({winner.percentage}%)</p>
+                                                </article>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        );
+                    })}
+                </div>
+            </section>
 
             {/* Full leaderboard */}
             <div className="card shadow">
@@ -259,7 +302,9 @@ function Leaderboard() {
                                                 </td>
 
                                                 <td>
-                                                    {student.testName ||
+                                                    {student.testName
+                                                        ? `Test ${student.attemptNumber || 1}: ${student.testName}`
+                                                        :
                                                         student.category ||
                                                         "Test"}
                                                 </td>

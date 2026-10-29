@@ -130,7 +130,7 @@ function StudentResults() {
                                 <tbody>
                                     {results.map((result) => (
                                         <tr key={result.id}>
-                                            <td className="fw-semibold">{result.testName}</td>
+                                            <td className="fw-semibold">Test {result.attemptNumber || 1}: {result.testName}</td>
                                             <td>{result.category}</td>
                                             <td>{result.score} / {result.total}</td>
                                             <td>
@@ -248,6 +248,7 @@ function StudentResults() {
                                                 {ticket.testName ? ` · ${ticket.testName}` : ""}
                                             </p>
                                             <p className="mb-1">{ticket.description}</p>
+                                            {ticket.adminReply && <div className="alert alert-success mt-3 mb-2"><strong>Admin reply:</strong><p className="mb-1 mt-1">{ticket.adminReply}</p>{ticket.adminReplyAt && <small>Replied {new Date(ticket.adminReplyAt).toLocaleString()}</small>}</div>}
                                             <small className="text-secondary">
                                                 {new Date(ticket.createdAt).toLocaleString()}
                                             </small>

@@ -46,6 +46,11 @@ public class SupportTicket {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
+    @Column(columnDefinition = "TEXT")
+    private String adminReply;
+
+    private LocalDateTime adminReplyAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private TicketStatus status = TicketStatus.OPEN;

@@ -35,6 +35,9 @@ public class CoursePurchase {
     @Column(nullable = false, updatable = false)
     private LocalDateTime purchasedAt;
 
+    @Column(nullable = false)
+    private boolean learningCompleted = false;
+
     @PrePersist
     void onCreate() { purchasedAt = LocalDateTime.now(); }
 }

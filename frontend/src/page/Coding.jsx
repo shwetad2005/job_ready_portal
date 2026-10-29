@@ -6,28 +6,9 @@ function Coding() {
     // Navigation hook
     const navigate = useNavigate();
 
-    // Start Learning button
+    // Start the learning path for coding
     const handleStartLearning = () => {
-
-        // Check whether user is already logged in
-        const user = localStorage.getItem("user");
-
-        if (user) {
-
-            // Already logged in
-            // Go directly to coding practice
-            navigate("/coding-practice");
-
-        } else {
-
-            // Not logged in
-            // First go to Login page
-            navigate("/login", {
-                state: {
-                    redirectTo: "/coding-practice"
-                }
-            });
-        }
+        navigate("/courses?category=CODING");
     };
 
     return (
@@ -169,14 +150,14 @@ function Coding() {
                 </h3>
 
                 <p className="mt-2">
-                    Login or register to start your coding practice.
+                    Explore coding lessons, then unlock the related coding tests.
                 </p>
 
                 <button
                     className="btn btn-success btn-lg mt-2"
                     onClick={handleStartLearning}
                 >
-                    Start Learning 🚀
+                    Browse Coding Learning 🚀
                 </button>
 
             </div>

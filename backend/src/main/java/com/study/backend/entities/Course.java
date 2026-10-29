@@ -2,7 +2,11 @@ package com.study.backend.entities;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.study.backend.entities.TestCategory;
 import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -24,6 +28,33 @@ public class Course {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50)
+    private TestCategory category = TestCategory.APTITUDE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 60)
+    private CourseSubtopic subtopic;
+
+    @Column(columnDefinition = "TEXT")
+    @JsonIgnore
+    private String learningContent;
+
+    @Column(length = 500)
+    private String youtubeUrl;
+
+    @Column(length = 255)
+    private String learningFileName;
+
+    @Column(length = 100)
+    @JsonIgnore
+    private String learningFileStorageKey;
+
+    @Column(length = 150)
+    private String learningFileContentType;
+
+    private Long learningFileSize;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;

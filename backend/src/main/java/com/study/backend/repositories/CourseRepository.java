@@ -6,4 +6,5 @@ import com.study.backend.entities.Course;
 
 public interface CourseRepository extends JpaRepository<Course, String> {
     List<Course> findByActiveTrueOrderByCreatedAtDesc();
+    boolean existsByCategoryAndActiveTrue(com.study.backend.entities.TestCategory category);
 }

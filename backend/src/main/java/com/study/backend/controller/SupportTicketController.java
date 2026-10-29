@@ -89,6 +89,10 @@ public class SupportTicketController {
         return ticketRepository.findById(ticketId)
                 .map(ticket -> {
                     ticket.setStatus(request.getStatus());
+                    if (request.getAdminReply() != null && !request.getAdminReply().isBlank()) {
+                        ticket.setAdminReply(request.getAdminReply().trim());
+                        ticket.setAdminReplyAt(java.time.LocalDateTime.now());
+                    }
                     return ResponseEntity.ok(
                             new SupportTicketResponseDto(ticketRepository.save(ticket)));
                 })

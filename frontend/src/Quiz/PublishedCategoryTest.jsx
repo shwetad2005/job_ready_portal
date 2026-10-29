@@ -11,12 +11,17 @@ const categoryDetails = {
         label: "Coding",
         dashboardPath: "/dashboard",
     },
+    INTERVIEW_PREPARATION: {
+        label: "Interview Preparation",
+        dashboardPath: "/dashboard",
+    },
 };
 
 function PublishedCategoryTest({ category }) {
     const navigate = useNavigate();
     const details = categoryDetails[category];
     const [tests, setTests] = useState([]);
+    const [attemptCounts, setAttemptCounts] = useState({});
     const [selectedTest, setSelectedTest] = useState(null);
     const [questions, setQuestions] = useState([]);
     const [answers, setAnswers] = useState({});
@@ -33,16 +38,23 @@ function PublishedCategoryTest({ category }) {
 
         const loadTests = async () => {
             try {
-                const response = await api.get(
-                    `/tests/published/category/${category}`
-                );
+                const [response, attemptsResponse] = await Promise.all([
+                    api.get(`/tests/published/category/${category}`),
+                    api.get("/attempts/mine"),
+                ]);
                 if (isMounted) {
                     setTests(response.data);
+                    setAttemptCounts(attemptsResponse.data.reduce((counts, attempt) => {
+                        counts[attempt.testId] = (counts[attempt.testId] || 0) + 1;
+                        return counts;
+                    }, {}));
                 }
             } catch (error) {
                 console.error(`Unable to load ${details.label} tests:`, error);
                 if (isMounted) {
-                    setErrorMessage("Unable to load published tests. Please try again.");
+                    setErrorMessage(error.response?.status === 403
+                        ? "Complete a purchased learning course in this subject to unlock its tests."
+                        : "Unable to load published tests. Please try again.");
                 }
             } finally {
                 if (isMounted) {
@@ -125,6 +137,7 @@ function PublishedCategoryTest({ category }) {
                     percentage: result.percentage,
                     category: details.label,
                     testName: selectedTest.title,
+                    attemptNumber: result.attemptNumber,
                 },
             });
         } catch (error) {
@@ -137,7 +150,7 @@ function PublishedCategoryTest({ category }) {
                 if (error.response.status === 401) {
                     errorMsg += "Please login to submit your test.";
                 } else if (error.response.status === 409) {
-                    errorMsg += "You have already submitted this test.";
+                    errorMsg += "You have used all 3 attempts for this test.";
                 } else if (error.response.status === 404) {
                     errorMsg += "Test not found or not published.";
                 } else {
@@ -320,6 +333,7 @@ function PublishedCategoryTest({ category }) {
                                         <div className="small text-secondary mb-3">
                                             <div>Duration: {test.durationMinutes} minutes</div>
                                             <div>Total marks: {test.totalMarks}</div>
+                                            <div>Attempts used: {attemptCounts[test.id] || 0} / 3</div>
                                             {test.deadline && (
                                                 <div>
                                                     Deadline: {new Date(test.deadline).toLocaleString()}
@@ -328,10 +342,12 @@ function PublishedCategoryTest({ category }) {
                                         </div>
                                         <button
                                             className="btn btn-primary mt-auto"
-                                            disabled={Boolean(expired) || isStarting}
+                                            disabled={Boolean(expired) || isStarting || (attemptCounts[test.id] || 0) >= 3}
                                             onClick={() => startTest(test)}
                                         >
-                                            {expired
+                                            {(attemptCounts[test.id] || 0) >= 3
+                                                ? "Attempt limit reached"
+                                                : expired
                                                 ? "Test expired"
                                                 : isStarting
                                                     ? "Loading test..."

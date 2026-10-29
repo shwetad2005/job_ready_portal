@@ -5,17 +5,7 @@ function Interview() {
     const navigate = useNavigate();
 
     const handleStartLearning = () => {
-        const user = localStorage.getItem("user");
-
-        if (user) {
-            navigate("/interview-practice");
-        } else {
-            navigate("/login", {
-                state: {
-                    redirectTo: "/interview-practice"
-                }
-            });
-        }
+        navigate("/courses?category=INTERVIEW_PREPARATION");
     };
 
     return (
@@ -118,12 +108,12 @@ function Interview() {
                     <div className="interview-cta-decoration" aria-hidden="true">✦</div>
                     <span className="interview-section-label">Take the next step</span>
                     <h2 id="interview-cta-title">Ready for Your Interview? <span>🚀</span></h2>
-                    <p>Login or register to start your interview preparation.</p>
+                    <p>Explore interview lessons, then unlock the related interview tests.</p>
                     <button
                         className="interview-start-button"
                         onClick={handleStartLearning}
                     >
-                        Start Learning 🚀
+                        Browse Interview Learning 🚀
                     </button>
                 </section>
             </div>

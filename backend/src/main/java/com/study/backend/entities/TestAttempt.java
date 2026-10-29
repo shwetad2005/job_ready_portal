@@ -37,6 +37,9 @@ public class TestAttempt {
 	@Column
 	private Integer timeTakenSeconds = 0;
 
+	@Column(name = "attempt_number")
+	private Integer attemptNumber;
+
 	@ManyToOne
 	private User user;
 	

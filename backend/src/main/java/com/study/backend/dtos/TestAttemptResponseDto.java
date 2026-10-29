@@ -17,6 +17,7 @@ public class TestAttemptResponseDto {
     private String testId;
     private String category;
     private String testName;
+    private Integer attemptNumber;
     private Integer score;
     private Integer total;
     private Integer percentage;

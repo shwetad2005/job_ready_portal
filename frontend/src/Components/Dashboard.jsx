@@ -9,36 +9,37 @@ import {
   FaSignOutAlt,
 } from "react-icons/fa";
 import aptitudeQuestions from "../data/aptitudeQuestions";
+import courseSubjects from "../data/courseSubtopics";
 import "./Dashboard.css";
 
 const preparationAreas = [
   {
     number: "01",
+    category: "APTITUDE",
     label: "REASONING & NUMBERS",
     title: "Aptitude practice",
     description: "Build speed and accuracy with quantitative, logical, and verbal questions.",
-    to: "/quantitative",
-    action: "Start a quiz",
+    action: "Browse aptitude courses",
     icon: FaBrain,
     tone: "dashboard-area-green",
   },
   {
     number: "02",
+    category: "CODING",
     label: "PROBLEM SOLVING",
     title: "Coding practice",
     description: "Strengthen your programming fundamentals with focused coding problems.",
-    to: "/coding",
-    action: "Explore coding",
+    action: "Browse coding courses",
     icon: FaCode,
     tone: "dashboard-area-orange",
   },
   {
     number: "03",
+    category: "INTERVIEW_PREPARATION",
     label: "COMMUNICATION",
     title: "Interview preparation",
     description: "Prepare for technical and HR conversations with thoughtful practice.",
-    to: "/interview",
-    action: "Prepare answers",
+    action: "Browse interview courses",
     icon: FaComments,
     tone: "dashboard-area-blue",
   },
@@ -117,8 +118,10 @@ function Dashboard() {
           </div>
 
           <div className="dashboard-area-grid">
-            {preparationAreas.map(({ number, label, title, description, to, action, icon: Icon, tone }) => (
-              <Link className={`dashboard-area ${tone}`} to={to} key={number}>
+            {preparationAreas.map(({ number, category, label, title, description, action, icon: Icon, tone }) => {
+              const subject = courseSubjects.find((item) => item.value === category);
+              return (
+              <article className={`dashboard-area ${tone}`} key={number}>
                 <div className="area-topline">
                   <span className="area-number">{number}</span>
                   <span className="area-icon"><Icon aria-hidden="true" /></span>
@@ -126,9 +129,20 @@ function Dashboard() {
                 <span className="area-label">{label}</span>
                 <h3>{title}</h3>
                 <p>{description}</p>
-                <span className="area-action">{action} <FaArrowRight aria-hidden="true" /></span>
-              </Link>
-            ))}
+                <ul className="dashboard-subtopic-list">
+                  {subject.subtopics.map((subtopic) => (
+                    <li key={subtopic.value}>
+                      <Link to={`/courses?category=${subject.value}&subtopic=${subtopic.value}`}>
+                        {subtopic.label} <FaArrowRight aria-hidden="true" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <Link className="area-action" to={`/courses?category=${subject.value}`}>
+                  {action} <FaArrowRight aria-hidden="true" />
+                </Link>
+              </article>
+            );})}
           </div>
         </section>
 

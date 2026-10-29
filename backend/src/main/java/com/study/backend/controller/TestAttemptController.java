@@ -28,6 +28,8 @@ import com.study.backend.entities.TestAttempt;
 import com.study.backend.entities.TestCategory;
 import com.study.backend.entities.User;
 import com.study.backend.repositories.QuestionRepository;
+import com.study.backend.repositories.CourseRepository;
+import com.study.backend.repositories.CoursePurchaseRepository;
 import com.study.backend.repositories.TestAttemptRepository;
 import com.study.backend.repositories.TestRepository;
 
@@ -40,15 +42,21 @@ public class TestAttemptController {
     private final TestAttemptRepository attemptRepository;
     private final TestRepository testRepository;
     private final QuestionRepository questionRepository;
+    private final CourseRepository courseRepository;
+    private final CoursePurchaseRepository coursePurchaseRepository;
 
     public TestAttemptController(
             TestAttemptRepository attemptRepository,
             TestRepository testRepository,
-            QuestionRepository questionRepository) {
+            QuestionRepository questionRepository,
+            CourseRepository courseRepository,
+            CoursePurchaseRepository coursePurchaseRepository) {
 
         this.attemptRepository = attemptRepository;
         this.testRepository = testRepository;
         this.questionRepository = questionRepository;
+        this.courseRepository = courseRepository;
+        this.coursePurchaseRepository = coursePurchaseRepository;
     }
 
     // Submit test attempt
@@ -71,10 +79,10 @@ public class TestAttemptController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-        // Prevent duplicate submissions for the same test
-        if (attemptRepository.existsByUser_IdAndTest_Id(user.getId(), test.getId())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(null);
+        if (courseRepository.existsByCategoryAndActiveTrue(test.getCategory())
+                && !coursePurchaseRepository.existsByUser_IdAndCourse_CategoryAndLearningCompletedTrue(
+                        user.getId(), test.getCategory())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         // Convert submitted answers into a map
@@ -118,6 +126,11 @@ public class TestAttemptController {
         attempt.setTest(test);
         attempt.setScore(score);
         attempt.setTotalMarks(total);
+        long attemptsUsed = attemptRepository.countByUser_IdAndTest_Id(user.getId(), test.getId());
+        if (attemptsUsed >= 3) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+        attempt.setAttemptNumber((int) attemptsUsed + 1);
 
         // Calculate time taken in seconds
         LocalDateTime startTime = request.getStartTime();
@@ -408,6 +421,7 @@ public class TestAttemptController {
                 test.getId(),
                 test.getCategory().name(),
                 test.getTitle(),
+                attempt.getAttemptNumber() == null ? 1 : attempt.getAttemptNumber(),
                 score,
                 total,
                 percentage,

@@ -1,85 +1,50 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../api";
+
+const performanceCategories = [
+    { value: "APTITUDE", label: "Aptitude" },
+    { value: "CODING", label: "Coding" },
+    { value: "INTERVIEW_PREPARATION", label: "Interview" },
+];
 
 function AdminDashboard() {
     const navigate = useNavigate();
 
-    const [students, setStudents] = useState(0);
-    const [topStudent, setTopStudent] = useState(null);
+    const [students, setStudents] = useState(null);
+    const [studentsError, setStudentsError] = useState("");
+    const [topPerformances, setTopPerformances] = useState([]);
 
     // =========================================
     // LOAD DASHBOARD DATA
     // =========================================
     useEffect(() => {
-        // REGISTERED STUDENTS
-        let registeredUsers =
-            JSON.parse(localStorage.getItem("users") || "[]");
+        let isMounted = true;
+        api.get("/users/students")
+            .then((response) => {
+                if (isMounted) setStudents(response.data.length);
+            })
+            .catch((error) => {
+                console.error("Unable to load registered student count:", error);
+                if (isMounted) setStudentsError("Unable to load student count.");
+            });
 
-        const currentUser =
-            JSON.parse(localStorage.getItem("user") || "null");
-
-        if (currentUser?.email) {
-            const alreadyExists = registeredUsers.some(
-                (student) =>
-                    student.email?.toLowerCase() ===
-                    currentUser.email.toLowerCase()
-            );
-
-            if (!alreadyExists) {
-                registeredUsers.push(currentUser);
-
-                localStorage.setItem(
-                    "users",
-                    JSON.stringify(registeredUsers)
-                );
-            }
-        }
-
-        setStudents(registeredUsers.length);
-
-        // =========================================
-        // TOP PERFORMER - HIGHEST PERCENTAGE
-        // =========================================
-        const savedResults =
-            JSON.parse(localStorage.getItem("weeklyScores") || "[]");
-
-        if (savedResults.length > 0) {
-            const sortedResults = savedResults
-                .map((result) => {
-                    const score = Number(result.score) || 0;
-                    const total = Number(result.total) || 0;
-
-                    const percentage =
-                        result.percentage !== undefined &&
-                        result.percentage !== null &&
-                        result.percentage !== ""
-                            ? Number(result.percentage)
-                            : total > 0
-                                ? Math.round((score / total) * 100)
-                                : 0;
-
-                    return {
-                        ...result,
-                        score,
-                        total,
-                        percentage,
-                        name:
-                            result.name ||
-                            result.fullName ||
-                            "Unknown Student",
-                    };
-                })
-                .sort(
-                    (a, b) =>
-                        b.percentage - a.percentage ||
-                        b.score - a.score
-                );
-
-            setTopStudent(sortedResults[0]);
-        } else {
-            setTopStudent(null);
-        }
+        api.get("/attempts/leaderboard")
+            .then((response) => {
+                if (!isMounted) return;
+                const winners = new Map();
+                response.data.forEach((attempt) => {
+                    const key = `${attempt.testId}:${attempt.attemptNumber || 1}`;
+                    if (attempt.testId && !winners.has(key)) winners.set(key, attempt);
+                });
+                setTopPerformances([...winners.values()]);
+            })
+            .catch((error) => {
+                console.error("Unable to load test winners:", error);
+                if (isMounted) setTopPerformances([]);
+            });
+        return () => { isMounted = false; };
     }, []);
 
     // =========================================
@@ -144,11 +109,11 @@ function AdminDashboard() {
             path: "/admin/questions",
         },
         {
-            title: "Manage Courses",
-            description: "Create courses and set their descriptions and prices for students.",
+            title: "Manage Learning Paths",
+            description: "Write aptitude, coding, and interview lessons, then link them to subject tests.",
             icon: "📚",
             iconBg: "#eff6ff",
-            button: "Manage Courses →",
+            button: "Manage Learning Paths →",
             buttonClass: "btn-primary",
             path: "/admin/courses",
         },
@@ -301,18 +266,18 @@ function AdminDashboard() {
                                         className="fw-bold mb-1"
                                         style={{ fontSize: "36px" }}
                                     >
-                                        {students}
+                                        {students === null ? "—" : students}
                                     </h2>
 
                                     <small className="text-secondary">
-                                        Students registered in portal
+                                        {studentsError || "Students registered in portal"}
                                     </small>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* TOP PERFORMER */}
+                    {/* TOP PERFORMANCE BY TEST */}
                     <div className="col-md-6">
                         <div
                             className="h-100 p-4"
@@ -336,32 +301,37 @@ function AdminDashboard() {
                                     🏆
                                 </div>
 
-                                <div>
+                                <div className="flex-grow-1">
                                     <p
                                         className="text-secondary mb-1"
                                         style={{ fontSize: "14px" }}
                                     >
-                                        TOP PERFORMER
+                                        TOP PERFORMANCE BY TEST
                                     </p>
-
-                                    <h4
-                                        className="fw-bold mb-1"
-                                        style={{ fontSize: "24px" }}
-                                    >
-                                        {topStudent?.name || "No Data"}
-                                    </h4>
-
-                                    <p className="text-success fw-bold mb-1">
-                                        {topStudent
-                                            ? `${topStudent.percentage}%`
-                                            : "No Results Yet"}
-                                    </p>
-
-                                    <small className="text-secondary">
-                                        {topStudent
-                                            ? `Highest performance · ${topStudent.score}/${topStudent.total} marks`
-                                            : "No test results available yet"}
-                                    </small>
+                                    <small className="text-secondary d-block mb-2">Best percentage per test attempt; ties go to faster, earlier attempts.</small>
+                                    <div className="row g-2">
+                                        {performanceCategories.map((category) => {
+                                            const categoryWinners = topPerformances.filter((winner) => winner.category === category.value);
+                                            return (
+                                                <div className="col-12 col-sm-4" key={category.value}>
+                                                    <section className="h-100 p-2 rounded border bg-light" aria-label={`${category.label} test winners`}>
+                                                        <h5 className="small fw-bold mb-2 text-truncate">{category.label}</h5>
+                                                        <div style={{ maxHeight: "170px", overflowY: "auto" }}>
+                                                            {categoryWinners.length === 0 ? (
+                                                                <small className="text-secondary">No results yet.</small>
+                                                            ) : categoryWinners.map((winner) => (
+                                                                <div className="border-top py-2" key={`${winner.testId}-${winner.attemptNumber || 1}`}>
+                                                                    <strong className="d-block small text-break">Test {winner.attemptNumber || 1}: {winner.testName}</strong>
+                                                                    <small className="text-secondary d-block text-break">{winner.name || winner.fullName || winner.email || "Student"}</small>
+                                                                    <small className="text-success fw-bold">{winner.percentage}%</small>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </section>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         </div>

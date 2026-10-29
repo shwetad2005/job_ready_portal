@@ -13,9 +13,13 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import com.study.backend.entities.Test;
 import com.study.backend.entities.TestCategory;
+import com.study.backend.entities.User;
+import com.study.backend.repositories.CoursePurchaseRepository;
+import com.study.backend.repositories.CourseRepository;
 import com.study.backend.repositories.TestRepository;
 import com.study.backend.services.TestService;
 
@@ -31,6 +35,12 @@ public class TestController {
 
     @Autowired
     private TestRepository testRepository;
+
+    @Autowired
+    private CourseRepository courseRepository;
+
+    @Autowired
+    private CoursePurchaseRepository coursePurchaseRepository;
 
     @PostMapping
     public ResponseEntity<Test> createTest(@RequestBody Test test) {
@@ -58,7 +68,13 @@ public class TestController {
 
     @GetMapping("/published/category/{category}")
     public ResponseEntity<List<Test>> getPublishedTestsByCategory(
-            @PathVariable TestCategory category) {
+            @PathVariable TestCategory category,
+            @AuthenticationPrincipal User user) {
+        if (courseRepository.existsByCategoryAndActiveTrue(category)
+                && (user == null || !coursePurchaseRepository
+                        .existsByUser_IdAndCourse_CategoryAndLearningCompletedTrue(user.getId(), category))) {
+            return ResponseEntity.status(403).build();
+        }
         return ResponseEntity.ok(
                 testService.getPublishedTestsByCategory(category));
     }

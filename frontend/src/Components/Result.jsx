@@ -15,6 +15,7 @@ function Result() {
     // Total Marks
     const total = location.state?.total || 0;
     const testName = location.state?.testName;
+    const attemptNumber = location.state?.attemptNumber || 1;
     const category = location.state?.category;
 
     // Percentage
@@ -30,7 +31,7 @@ function Result() {
 
                 {testName && (
                     <p className="text-secondary mt-3">
-                        {testName}{category ? ` · ${category}` : ""}
+                        Test {attemptNumber}: {testName}{category ? ` · ${category}` : ""}
                     </p>
                 )}
 

@@ -1,7 +1,8 @@
 package com.study.backend.dtos;
 
-import java.math.BigDecimal;
-import jakarta.validation.constraints.DecimalMin;
+import com.study.backend.entities.TestCategory;
+import com.study.backend.entities.CourseSubtopic;
+import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -13,6 +14,11 @@ public class CourseRequestDto {
     private String title;
     @NotBlank
     private String description;
-    @NotNull @DecimalMin("0.00")
-    private BigDecimal price;
+    @NotNull
+    private TestCategory category;
+    @NotNull
+    private CourseSubtopic subtopic;
+    private String learningContent;
+    private String youtubeUrl;
+    private MultipartFile learningFile;
 }
