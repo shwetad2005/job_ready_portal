@@ -23,11 +23,20 @@ function AdminDashboard() {
         let isMounted = true;
         api.get("/users/students")
             .then((response) => {
-                if (isMounted) setStudents(response.data.length);
+                if (isMounted) {
+                    // response.data is an array of students
+                    setStudents(Array.isArray(response.data) ? response.data.length : 0);
+                }
             })
             .catch((error) => {
                 console.error("Unable to load registered student count:", error);
-                if (isMounted) setStudentsError("Unable to load student count.");
+                if (isMounted) {
+                    if (error.response?.status === 403) {
+                        setStudentsError("Access denied. Please login as admin.");
+                    } else {
+                        setStudentsError("Unable to load student count.");
+                    }
+                }
             });
 
         api.get("/attempts/leaderboard")
@@ -159,7 +168,7 @@ function AdminDashboard() {
     ];
 
     return (
-        <div
+        <div className="admin-dashboard-page"
             style={{
                 minHeight: "100vh",
                 background:
@@ -170,7 +179,7 @@ function AdminDashboard() {
             <div className="container pt-4">
                 {/* HEADER */}
                 <div
-                    className="p-4 p-md-5 mb-4"
+                    className="admin-dashboard-hero p-4 p-md-5 mb-4"
                     style={{
                         background:
                             "linear-gradient(135deg, #4f46e5, #6366f1, #7c3aed)",
@@ -233,7 +242,7 @@ function AdminDashboard() {
                     {/* REGISTERED STUDENTS */}
                     <div className="col-md-6">
                         <div
-                            className="h-100 p-4"
+                            className="admin-overview-card h-100 p-4"
                             style={overviewCardStyle}
                             onMouseEnter={handleCardEnter}
                             onMouseLeave={handleCardLeave}
@@ -280,7 +289,7 @@ function AdminDashboard() {
                     {/* TOP PERFORMANCE BY TEST */}
                     <div className="col-md-6">
                         <div
-                            className="h-100 p-4"
+                            className="admin-overview-card h-100 p-4"
                             style={overviewCardStyle}
                             onMouseEnter={handleCardEnter}
                             onMouseLeave={handleCardLeave}
@@ -353,7 +362,7 @@ function AdminDashboard() {
                             key={card.title}
                         >
                             <div
-                                className="h-100 p-4"
+                                className="admin-management-card h-100 p-4"
                                 style={managementCardStyle}
                                 onMouseEnter={handleCardEnter}
                                 onMouseLeave={handleCardLeave}

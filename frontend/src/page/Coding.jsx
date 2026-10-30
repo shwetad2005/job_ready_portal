@@ -1,5 +1,6 @@
 
 import { useNavigate } from "react-router-dom";
+import "./PreparationPages.css";
 
 function Coding() {
 
@@ -12,7 +13,7 @@ function Coding() {
     };
 
     return (
-        <div className="container mt-5 mb-5">
+        <div className="container mt-5 mb-5 preparation-page preparation-coding">
 
             {/* Page Heading */}
             <div className="text-center mb-5">

@@ -36,7 +36,8 @@ function Leaderboard() {
             }
 
             const response = await api.get(endpoint);
-            setLeaderboard(response.data);
+            console.log("Leaderboard response:", response.data);
+            setLeaderboard(response.data || []);
 
             // Fetch user's rank if logged in
             if (user && category !== "ALL") {
@@ -54,7 +55,7 @@ function Leaderboard() {
             }
         } catch (error) {
             console.error("Failed to fetch leaderboard:", error);
-            // Fallback to localStorage
+            // Fallback to localStorage for practice tests
             const scores = JSON.parse(
                 localStorage.getItem("weeklyScores") || "[]"
             );
@@ -78,10 +79,8 @@ function Leaderboard() {
                         score,
                         total,
                         percentage,
-                        name:
-                            student.name ||
-                            student.fullName ||
-                            "Unknown Student",
+                        fullName: student.name || student.fullName || "Unknown Student",
+                        testName: student.testName || "Practice Test",
                     };
                 })
                 .sort(
@@ -96,16 +95,6 @@ function Leaderboard() {
         }
     };
 
-    const testWinners = [...leaderboard.reduce((winners, attempt) => {
-        const attemptNumber = attempt.attemptNumber || 1;
-        const winnerKey = `${attempt.testId}:${attemptNumber}`;
-        if (attempt.testId && !winners.has(winnerKey)) {
-            // The API ranks attempts by percentage, then time, then submission time.
-            winners.set(winnerKey, attempt);
-        }
-        return winners;
-    }, new Map()).values()];
-
     if (isLoading) {
         return (
             <div className="container mt-5 text-center">
@@ -118,38 +107,37 @@ function Leaderboard() {
     return (
         <div className="container mt-5 mb-5">
             <div className="text-center mb-5">
-                <h1 className="fw-bold">🏆 Leaderboard</h1>
+                <h1 className="fw-bold mb-2">🏆 Leaderboard</h1>
                 <p className="lead text-secondary">
-                    Check your ranking and compare your performance.
+                    Check your ranking and compare your performance
                 </p>
             </div>
 
             {/* Category Filter */}
-            <div className="card shadow-sm mb-4">
+            <div className="card shadow-sm mb-4" style={{ borderRadius: "16px", border: "none" }}>
                 <div className="card-body p-3">
-                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                        <div className="btn-group" role="group">
-                            {categories.map((cat) => (
-                                <button
-                                    key={cat.value}
-                                    className={`btn ${
-                                        selectedCategory === cat.value
-                                            ? "btn-primary"
-                                            : "btn-outline-primary"
-                                    }`}
-                                    onClick={() => setSelectedCategory(cat.value)}
-                                >
-                                    {cat.label}
-                                </button>
-                            ))}
-                        </div>
+                    <div className="d-flex justify-content-center align-items-center flex-wrap gap-2">
+                        {categories.map((cat) => (
+                            <button
+                                key={cat.value}
+                                className={`btn px-4 py-2 ${
+                                    selectedCategory === cat.value
+                                        ? "btn-primary"
+                                        : "btn-outline-primary"
+                                }`}
+                                style={{ borderRadius: "25px" }}
+                                onClick={() => setSelectedCategory(cat.value)}
+                            >
+                                {cat.label}
+                            </button>
+                        ))}
                     </div>
                 </div>
             </div>
 
             {/* User's Rank Card */}
             {userRank && userRank.rank !== null && (
-                <div className="card shadow-sm mb-4 border-primary">
+                <div className="card shadow-sm mb-4 border-primary" style={{ borderRadius: "16px", border: "2px solid #667eea" }}>
                     <div className="card-body p-4">
                         <div className="d-flex justify-content-between align-items-center">
                             <div>
@@ -159,7 +147,7 @@ function Leaderboard() {
                                 </p>
                             </div>
                             <div className="text-end">
-                                <h2 className="fw-bold text-primary mb-0">
+                                <h2 className="fw-bold mb-0" style={{ color: "#667eea" }}>
                                     #{userRank.rank}
                                 </h2>
                                 <p className="mb-0">
@@ -172,20 +160,26 @@ function Leaderboard() {
                 </div>
             )}
 
-            {/* Best attempt for each individual test */}
             {/* Top 3 students */}
             {leaderboard.length > 0 && (
                 <div className="row justify-content-center mb-5">
                     {leaderboard.slice(0, 3).map((student, index) => (
                         <div className="col-md-4 mb-3" key={student.id ?? index}>
-                            <div className="card shadow text-center h-100">
+                            <div 
+                                className="card shadow text-center h-100"
+                                style={{ 
+                                    borderRadius: "20px",
+                                    border: "none",
+                                    transition: "transform 0.3s ease"
+                                }}
+                            >
                                 <div className="card-body p-4">
-                                    <div className="display-4">
+                                    <div style={{ fontSize: "50px", marginBottom: "15px" }}>
                                         {["🥇", "🥈", "🥉"][index]}
                                     </div>
 
                                     <h4 className="fw-bold mt-3">
-                                        {student.name || student.fullName || student.email || "Student"}
+                                        {student.fullName}
                                     </h4>
 
                                     <p className="mb-1">
@@ -195,11 +189,11 @@ function Leaderboard() {
                                         </strong>
                                     </p>
 
-                                    <p className="text-success fw-bold">
+                                    <p className="text-success fw-bold mb-2">
                                         {student.percentage}%
                                     </p>
                                     <p className="small text-muted mb-0">
-                                        Test {student.attemptNumber || 1}: {student.testName}
+                                        {student.testName}
                                     </p>
                                 </div>
                             </div>
@@ -208,40 +202,8 @@ function Leaderboard() {
                 </div>
             )}
 
-            <section className="mb-5" aria-labelledby="test-winners-title">
-                <div className="mb-3">
-                    <h2 id="test-winners-title" className="h4 fw-bold">Top performance by test</h2>
-                    <p className="text-secondary mb-0">Each test attempt number has a winner: highest percentage, then fastest time, then earliest submission.</p>
-                </div>
-                <div className="row g-3">
-                    {categories.filter((category) => category.value !== "ALL").map((category) => {
-                        const categoryWinners = testWinners.filter((winner) => winner.category === category.value);
-                        return (
-                            <div className="col-12 col-md-4" key={category.value}>
-                                <section className="card h-100 border-0 shadow-sm" aria-label={`${category.label} test winners`}>
-                                    <div className="card-body">
-                                        <h3 className="h5 fw-bold border-bottom pb-2">{category.label}</h3>
-                                        <div style={{ maxHeight: "360px", overflowY: "auto" }}>
-                                            {categoryWinners.length === 0 ? (
-                                                <p className="small text-secondary mb-0">No test results yet.</p>
-                                            ) : categoryWinners.map((winner) => (
-                                                <article className="border-bottom py-3" key={`${winner.testId}-${winner.attemptNumber || 1}`}>
-                                                    <h4 className="h6 fw-bold">Test {winner.attemptNumber || 1}: {winner.testName || "Test"}</h4>
-                                                    <p className="small mb-1">Winner: <strong>{winner.name || winner.fullName || winner.email || "Student"}</strong></p>
-                                                    <p className="text-success fw-bold mb-0">{winner.score} / {winner.total} ({winner.percentage}%)</p>
-                                                </article>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </section>
-                            </div>
-                        );
-                    })}
-                </div>
-            </section>
-
             {/* Full leaderboard */}
-            <div className="card shadow">
+            <div className="card shadow" style={{ borderRadius: "16px", border: "none" }}>
                 <div className="card-body p-0">
                     <div className="table-responsive">
                         <table className="table table-hover text-center align-middle mb-0">
@@ -262,7 +224,7 @@ function Leaderboard() {
                                             colSpan="5"
                                             className="py-5 text-secondary"
                                         >
-                                            No test results available yet.
+                                            No test results available yet. Complete a test to see your ranking!
                                         </td>
                                     </tr>
                                 ) : (
@@ -281,6 +243,7 @@ function Leaderboard() {
                                                         ? "table-primary fw-bold"
                                                         : ""
                                                 }
+                                                style={{ cursor: "pointer" }}
                                             >
                                                 <td className="fw-bold">
                                                     {index === 0
@@ -293,7 +256,7 @@ function Leaderboard() {
                                                 </td>
 
                                                 <td>
-                                                    {student.name || student.fullName || student.email || "Student"}
+                                                    {student.fullName}
                                                     {isCurrentUser && (
                                                         <span className="badge bg-primary ms-2">
                                                             You
@@ -302,9 +265,7 @@ function Leaderboard() {
                                                 </td>
 
                                                 <td>
-                                                    {student.testName
-                                                        ? `Test ${student.attemptNumber || 1}: ${student.testName}`
-                                                        :
+                                                    {student.testName ||
                                                         student.category ||
                                                         "Test"}
                                                 </td>
@@ -328,7 +289,8 @@ function Leaderboard() {
 
             <div className="text-center mt-4">
                 <button
-                    className="btn btn-primary"
+                    className="btn btn-primary px-4 py-2"
+                    style={{ borderRadius: "12px" }}
                     onClick={() => navigate("/dashboard")}
                 >
                     ← Back to Dashboard

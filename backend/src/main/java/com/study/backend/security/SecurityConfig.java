@@ -83,6 +83,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/users/**").permitAll()
                 .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/auth/send-otp").permitAll()
                 .requestMatchers(HttpMethod.POST, "/attempts").authenticated()
                 .requestMatchers(HttpMethod.GET, "/attempts/mine").authenticated()
                 .requestMatchers(HttpMethod.GET, "/attempts").authenticated()

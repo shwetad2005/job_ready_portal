@@ -9,18 +9,67 @@ function Login() {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [otp, setOtp] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSendingOtp, setIsSendingOtp] = useState(false);
+
+    const handleSendOtp = async (e) => {
+        e.preventDefault();
+        setErrorMessage("");
+        setSuccessMessage("");
+        setIsSendingOtp(true);
+
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setErrorMessage("Please enter a valid email address.");
+            setIsSendingOtp(false);
+            return;
+        }
+
+        try {
+            const response = await api.post("/auth/send-otp", { email });
+            setSuccessMessage("OTP sent to your email! (Check console for demo)");
+            console.log("OTP:", response.data.otp);
+        } catch (error) {
+            if (error.response?.status === 404) {
+                setErrorMessage("User not found. Please register first.");
+            } else {
+                setErrorMessage("Failed to send OTP. Please try again.");
+            }
+        } finally {
+            setIsSendingOtp(false);
+        }
+    };
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setErrorMessage("");
+        setSuccessMessage("");
         setIsSubmitting(true);
+
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setErrorMessage("Please enter a valid email address.");
+            setIsSubmitting(false);
+            return;
+        }
+
+        // OTP validation - required
+        if (!otp || otp.trim().length !== 6) {
+            setErrorMessage("Please enter the 6-digit OTP sent to your email.");
+            setIsSubmitting(false);
+            return;
+        }
 
         try {
             const response = await api.post("/auth/login", {
                 email: email.trim().toLowerCase(),
-                password
+                password,
+                otp
             });
 
             localStorage.setItem("user", JSON.stringify(response.data.user));
@@ -33,16 +82,16 @@ function Login() {
             navigate(redirectTo, { replace: true });
         } catch (error) {
             if (error.response?.status === 401) {
-                setErrorMessage("Invalid email or password.");
+                setErrorMessage("Invalid email, password, or OTP.");
             } else if (error.response?.status === 400) {
-                setErrorMessage("Please enter a valid email and password.");
+                setErrorMessage("OTP is required. Please enter the OTP sent to your email.");
             } else if (error.response) {
                 setErrorMessage(
-                    `The server couldn't complete your sign-in (error ${error.response.status}). Please try again.`
+                    `Server error: ${error.response.status}. Please try again.`
                 );
             } else {
                 setErrorMessage(
-                    "Can't connect to the sign-in server. Check that the backend is running and try again."
+                    "Can't connect to the server. Check that the backend is running."
                 );
             }
         } finally {
@@ -59,7 +108,7 @@ function Login() {
 
                 <div className="col-md-5">
 
-                    <div className="card shadow p-4">
+                    <div className="card shadow p-4" style={{ borderRadius: "20px", border: "none" }}>
 
                         <h2 className="text-center fw-bold mb-4">
                             Login
@@ -71,7 +120,7 @@ function Login() {
 
                             <div className="mb-3">
 
-                                <label className="form-label">
+                                <label className="form-label fw-semibold">
                                     Email
                                 </label>
 
@@ -85,16 +134,16 @@ function Login() {
                                     }
                                     autoComplete="email"
                                     required
+                                    style={{ borderRadius: "12px" }}
                                 />
 
                             </div>
-
 
                             {/* PASSWORD */}
 
                             <div className="mb-3">
 
-                                <label className="form-label">
+                                <label className="form-label fw-semibold">
                                     Password
                                 </label>
 
@@ -108,8 +157,43 @@ function Login() {
                                     }
                                     autoComplete="current-password"
                                     required
+                                    style={{ borderRadius: "12px" }}
                                 />
 
+                            </div>
+
+                            {/* OTP Section - Required */}
+
+                            <div className="mb-3">
+                                <label className="form-label fw-semibold">
+                                    OTP <span className="text-danger">*</span>
+                                </label>
+                                <div className="input-group">
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="Enter 6-digit OTP"
+                                        value={otp}
+                                        onChange={(e) =>
+                                            setOtp(e.target.value)
+                                        }
+                                        maxLength={6}
+                                        required
+                                        style={{ borderRadius: "12px 0 0 12px" }}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-primary"
+                                        onClick={handleSendOtp}
+                                        disabled={isSendingOtp || !email}
+                                        style={{ borderRadius: "0 12px 12px 0" }}
+                                    >
+                                        {isSendingOtp ? "Sending..." : "Send OTP"}
+                                    </button>
+                                </div>
+                                <small className="text-muted mt-1 d-block">
+                                    OTP is required for login. Click "Send OTP" to receive your code.
+                                </small>
                             </div>
 
                             {errorMessage && (
@@ -118,12 +202,19 @@ function Login() {
                                 </div>
                             )}
 
+                            {successMessage && (
+                                <div className="alert alert-success" role="alert">
+                                    {successMessage}
+                                </div>
+                            )}
+
                             {/* LOGIN BUTTON */}
 
                             <button
                                 type="submit"
-                                className="btn btn-primary w-100"
+                                className="btn btn-primary w-100 py-2"
                                 disabled={isSubmitting}
+                                style={{ borderRadius: "12px", fontWeight: "500" }}
                             >
                                 {isSubmitting ? "Signing in..." : "Login"}
                             </button>
@@ -137,7 +228,7 @@ function Login() {
 
                             Don't have an account?{" "}
 
-                            <Link to="/register">
+                            <Link to="/register" className="fw-semibold">
                                 Register
                             </Link>
 

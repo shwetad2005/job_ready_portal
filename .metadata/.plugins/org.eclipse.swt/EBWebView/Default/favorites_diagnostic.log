@@ -276,3 +276,23 @@
 2026-10-29 05:39:32.131: [INFO] BookmarkModelLoaded, ids_reassigned: 0
 2026-10-29 05:39:32.131: [INFO] BookmarksLoadDropped droppedNodes=0
 2026-10-29 05:39:32.131: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-29 08:54:51.509: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-29 15:42:19.345: [INFO] CurrentProfilePath: C:\Users\Shweta\Desktop\IT Vedant 215\placement-preparation-portal\.metadata\.plugins\org.eclipse.swt\EBWebView\Default
+2026-10-29 15:42:19.345: [INFO] Profiles total count: 1
+2026-10-29 15:42:19.346: [INFO] Profile: name=Profile 1 path=C:\Users\Shweta\Desktop\IT Vedant 215\placement-preparation-portal\.metadata\.plugins\org.eclipse.swt\EBWebView\Default lastActive=2026-10-28T14:49:54.298Z
+2026-10-29 15:42:19.346: [INFO] LastUsedProfileDir: C:\Users\Shweta\Desktop\IT Vedant 215\placement-preparation-portal\.metadata\.plugins\org.eclipse.swt\EBWebView\Default
+2026-10-29 15:42:19.346: [INFO] MostRecentlyActiveProfile: name=Profile 1 path=C:\Users\Shweta\Desktop\IT Vedant 215\placement-preparation-portal\.metadata\.plugins\org.eclipse.swt\EBWebView\Default lastActive=2026-10-28T14:49:54.298Z
+2026-10-29 15:42:19.346: [INFO] OnDoneLoading sync enabled: 0
+2026-10-29 15:42:19.346: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-29 15:42:19.346: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-29 15:42:19.346: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-29 16:49:34.808: [INFO] BookmarksSnapshot Shutdown total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-10-30 06:04:20.082: [INFO] CurrentProfilePath: C:\Users\Shweta\Desktop\IT Vedant 215\placement-preparation-portal\.metadata\.plugins\org.eclipse.swt\EBWebView\Default
+2026-10-30 06:04:20.082: [INFO] Profiles total count: 1
+2026-10-30 06:04:20.083: [INFO] Profile: name=Profile 1 path=C:\Users\Shweta\Desktop\IT Vedant 215\placement-preparation-portal\.metadata\.plugins\org.eclipse.swt\EBWebView\Default lastActive=2026-10-28T14:49:54.298Z
+2026-10-30 06:04:20.083: [INFO] LastUsedProfileDir: C:\Users\Shweta\Desktop\IT Vedant 215\placement-preparation-portal\.metadata\.plugins\org.eclipse.swt\EBWebView\Default
+2026-10-30 06:04:20.083: [INFO] MostRecentlyActiveProfile: name=Profile 1 path=C:\Users\Shweta\Desktop\IT Vedant 215\placement-preparation-portal\.metadata\.plugins\org.eclipse.swt\EBWebView\Default lastActive=2026-10-28T14:49:54.298Z
+2026-10-30 06:04:20.083: [INFO] OnDoneLoading sync enabled: 0
+2026-10-30 06:04:20.083: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-10-30 06:04:20.083: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-10-30 06:04:20.083: [INFO] BookmarksSnapshot Startup total=0 bar=0 other=0 mobile=0 showBar=0 showBarNTP=1

@@ -72,11 +72,11 @@ function PublishedCategoryTest({ category }) {
     const startTest = async (test) => {
         setIsStarting(true);
         setErrorMessage("");
-        // LocalDateTime on the API expects an ISO value without a timezone suffix.
+        // LocalDateTime on the API expects an ISO value with full format
         const startedAt = new Date();
         const localStartTime = new Date(
             startedAt.getTime() - startedAt.getTimezoneOffset() * 60_000
-        ).toISOString().slice(0, 19);
+        ).toISOString();
 
         try {
             const response = await api.get(`/questions/test/${test.id}`);
